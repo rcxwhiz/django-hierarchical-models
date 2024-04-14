@@ -1,0 +1,10 @@
+name: Run unit and formatting tests
+
+on: [ push, pull_request ]
+
+jobs:
+  black-formatting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jpetrucciani/black-check@24.4.0

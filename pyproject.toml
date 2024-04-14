@@ -5,9 +5,12 @@ description = "Adds hierarchical models to Django"
 authors = ["Josh Bedwell <rcxwhiz@gmail.com>"]
 license = "MIT"
 readme = "README.md"
+repository = "https://github.com/rcxwhiz/django-hierarchical-models"
+packages = [{include = "django-hierarchical-models"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
+django = "^5.0.4"
 
 
 [tool.poetry.group.dev.dependencies]

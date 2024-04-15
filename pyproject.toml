@@ -6,17 +6,27 @@ authors = ["Josh Bedwell <rcxwhiz@gmail.com>"]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/rcxwhiz/django-hierarchical-models"
-packages = [{include = "django-hierarchical-models"}]
+packages = [{include = "django_hierarchical_models"}]
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.10"
 django = "^5.0.4"
 
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.7.0"
 black = "^24.4.0"
+tox = "^4.14.2"
+flake8 = "^7.0.0"
+pytest = "^8.1.1"
+pytest-django = "^4.8.0"
+isort = "^5.13.2"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+django_find_project = "false"
+DJANGO_SETTINGS_MODULE = "tests.settings"
+pythonpath = "."

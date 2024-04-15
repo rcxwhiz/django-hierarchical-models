@@ -1,9 +1,9 @@
 from django.db import models
 
-from django_hierarchical_models.alm import AdjacencyListModel
+from django_hierarchical_models.models import HierarchicalModel
 
 
-class PersonModel(AdjacencyListModel):
+class PersonModel(HierarchicalModel):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
 

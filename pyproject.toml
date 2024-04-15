@@ -30,3 +30,6 @@ build-backend = "poetry.core.masonry.api"
 django_find_project = "false"
 DJANGO_SETTINGS_MODULE = "tests.settings"
 pythonpath = "."
+
+[tool.isort]
+profile = "black"

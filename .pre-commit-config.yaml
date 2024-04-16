@@ -18,7 +18,7 @@ repos:
     rev: 7.0.0
     hooks:
     -   id: flake8
-        args: ['--ignore=E501']
+        args: ['--extend-ignore=E203,E701', '--max-line-length=88']
         files: ^(django_hierarchical_models|tests)/
 
 -   repo: https://github.com/asottile/pyupgrade

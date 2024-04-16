@@ -23,7 +23,7 @@ class AdjacencyListModel(HierarchicalModel):
     def parent(self: T) -> T | None:
         return self._parent
 
-    def set_parent(self: T, parent: T):
+    def set_parent(self: T, parent: T | None):
         self._parent = parent
         self.save()
 
@@ -36,16 +36,3 @@ class AdjacencyListModel(HierarchicalModel):
         if create_method is None:
             create_method = self.__class__.objects.create
         return create_method(_parent=self, **kwargs)
-
-    def add_child(self: T, child: T):
-        print("TOOD")
-
-    def remove_child(self: T, child: T):
-        print("TODO")
-
-    def ancestors(self: T, max_level: int | None = None) -> list[T]:
-        if self._parent is None or (max_level is not None and max_level <= 0):
-            return []
-        if max_level is not None:
-            max_level -= 1
-        return self._parent.ancestors(max_level=max_level) + [self._parent]

@@ -26,8 +26,12 @@ class HierarchicalModelABC(models.Model, metaclass=HierarchicalModelABCMeta):
         pass
 
     @abstractmethod
-    def create_child(self: T, create_method: Callable[..., T] | None = None, **kwargs) -> T:
+    def create_child(
+        self: T, create_method: Callable[..., T] | None = None, **kwargs
+    ) -> T:
         pass
+
+    # TODO addChild and removeChild methods
 
     @abstractmethod
     def ancestors(self: T, max_level: int | None = None) -> list[T]:

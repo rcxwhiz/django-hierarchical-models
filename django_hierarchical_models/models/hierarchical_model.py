@@ -12,7 +12,7 @@ class HierarchicalModelABCMeta(ABCMeta, type(models.Model)):
     pass
 
 
-class HierarchicalModelABC(models.Model, metaclass=HierarchicalModelABCMeta):
+class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
     @abstractmethod
     def parent(self: T) -> T | None:
         pass
@@ -31,7 +31,13 @@ class HierarchicalModelABC(models.Model, metaclass=HierarchicalModelABCMeta):
     ) -> T:
         pass
 
-    # TODO addChild and removeChild methods
+    @abstractmethod
+    def add_child(self: T, child: T):
+        pass
+
+    @abstractmethod
+    def remove_child(self: T, child: T):
+        pass
 
     @abstractmethod
     def ancestors(self: T, max_level: int | None = None) -> list[T]:

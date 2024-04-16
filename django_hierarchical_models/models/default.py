@@ -3,10 +3,10 @@ from typing import TypeVar
 
 from django.conf import settings
 
-from .hierarchical_model_abc import HierarchicalModelABC
+from .hierarchical_model import HierarchicalModel
 
-T = TypeVar("T", bound=HierarchicalModelABC)
-HierarchicalModel: T
+T = TypeVar("T", bound=HierarchicalModel)
+DefaultHierarchicalModel: T
 
 settings_label = "DEFAULT_HIERARCHICAL_MODEL"
 default_class_name = "AdjacencyListModel"
@@ -17,4 +17,4 @@ if class_name not in valid_classes:
     raise TypeError(f"{class_name} not a valid HierarchicalModel")
 
 model_module = importlib.import_module(valid_classes[class_name])
-HierarchicalModel = getattr(model_module, class_name)
+DefaultHierarchicalModel = getattr(model_module, class_name)

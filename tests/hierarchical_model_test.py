@@ -1,19 +1,19 @@
 from typing import TypeVar
 
-from django_hierarchical_models.models.hierarchical_model_abc import (
-    HierarchicalModelABC,
-)
+from django.test import TestCase
+
+from django_hierarchical_models.models.hierarchical_model import HierarchicalModel
 from tests.models import PersonModelMixin
 
 
-class TestModel(PersonModelMixin, HierarchicalModelABC):
+class TestHierarchicalModel(PersonModelMixin, HierarchicalModel):
     pass
 
 
-T = TypeVar("T", bound=TestModel)
+T = TypeVar("T", bound=TestHierarchicalModel)
 
 
-class HierarchicalModelTestInterface:
+class HierarchicalModelTest(TestCase):
     model_class: T
 
     def create(self, **kwargs) -> T:

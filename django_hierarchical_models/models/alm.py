@@ -3,10 +3,10 @@ from collections.abc import Callable
 from django.db import models
 from django.db.models import QuerySet
 
-from .hierarchical_model_abc import HierarchicalModelABC, T
+from .hierarchical_model import HierarchicalModel, T
 
 
-class AdjacencyListModel(HierarchicalModelABC):
+class AdjacencyListModel(HierarchicalModel):
 
     _parent = models.ForeignKey(
         "self", on_delete=models.SET_NULL, blank=True, null=True
@@ -36,6 +36,12 @@ class AdjacencyListModel(HierarchicalModelABC):
         if create_method is None:
             create_method = self.__class__.objects.create
         return create_method(_parent=self, **kwargs)
+
+    def add_child(self: T, child: T):
+        print("TOOD")
+
+    def remove_child(self: T, child: T):
+        print("TODO")
 
     def ancestors(self: T, max_level: int | None = None) -> list[T]:
         if self._parent is None or (max_level is not None and max_level <= 0):

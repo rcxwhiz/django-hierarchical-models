@@ -11,13 +11,14 @@ repos:
     rev: 5.13.2
     hooks:
     -   id: isort
-        args: ['--check-only', '--diff']
+        args: ['--profile', 'black', '--check-only', '--diff']
         files: ^(django_hierarchical_models|tests)/
 
 -   repo: https://github.com/PyCQA/flake8
     rev: 7.0.0
     hooks:
     -   id: flake8
+        args: ['--extend-ignore=E203,E701', '--max-line-length=88']
         files: ^(django_hierarchical_models|tests)/
 
 -   repo: https://github.com/asottile/pyupgrade
@@ -25,3 +26,9 @@ repos:
     hooks:
     -   id: pyupgrade
         args: [--py310-plus]
+
+-   repo: https://github.com/psf/black-pre-commit-mirror
+    rev: 24.4.0
+    hooks:
+      - id: black
+        language_version: python3.12

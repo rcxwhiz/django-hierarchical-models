@@ -13,7 +13,7 @@ from django_hierarchical_models.models.exceptions import (
     NotAChildException,
 )
 
-T = TypeVar("T")
+T = TypeVar("T", bound="HierarchicalModel")
 
 
 class HierarchicalModelABCMeta(ABCMeta, type(models.Model)):
@@ -23,7 +23,9 @@ class HierarchicalModelABCMeta(ABCMeta, type(models.Model)):
 class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
 
     class Node:
-        def __init__(self, instance: T, children: list[T] | None = None):
+        def __init__(
+            self, instance: T, children: list[HierarchicalModel.Node] | None = None
+        ):
             self.instance = instance
             self.children = children
 

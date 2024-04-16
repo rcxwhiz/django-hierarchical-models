@@ -25,7 +25,7 @@ class AdjacencyListModel(HierarchicalModel):
 
     def set_parent(self: T, parent: T | None):
         self._parent = parent
-        self.save()
+        self.save(update_fields=["_parent"])
 
     def direct_children(self: T) -> QuerySet[T]:
         return self.__class__.objects.filter(_parent=self)

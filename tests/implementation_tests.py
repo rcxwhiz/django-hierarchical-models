@@ -1,6 +1,6 @@
-from tests.hierarchical_model_test import HierarchicalModelTest
+from tests.hierarchical_model_test import HierarchicalModelTestCase
 from tests.models import ALMPerson
 
 
-class AdjacencyListModelTests(HierarchicalModelTest):
+class AdjacencyListModelTests(HierarchicalModelTestCase):
     model_class = ALMPerson

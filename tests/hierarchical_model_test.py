@@ -479,7 +479,150 @@ class HierarchicalModelTestCase(TestCase):
         self.assertEqual(self.n32.root(), self.n20)
 
     def test_advanced_children(self):
-        pass
+        mn1 = HierarchicalModel.Node(self.n1)
+        mn2 = HierarchicalModel.Node(self.n2)
+        mn3 = HierarchicalModel.Node(self.n3)
+        mn4 = HierarchicalModel.Node(self.n4)
+        mn5 = HierarchicalModel.Node(self.n5)
+        mn6 = HierarchicalModel.Node(self.n6)
+        mn7 = HierarchicalModel.Node(self.n7)
+        mn8 = HierarchicalModel.Node(self.n8)
+        mn9 = HierarchicalModel.Node(self.n9)
+        mn10 = HierarchicalModel.Node(self.n10)
+        mn11 = HierarchicalModel.Node(self.n11)
+        mn12 = HierarchicalModel.Node(self.n12)
+        mn13 = HierarchicalModel.Node(self.n13)
+        mn14 = HierarchicalModel.Node(self.n14)
+        mn15 = HierarchicalModel.Node(self.n15)
+        mn16 = HierarchicalModel.Node(self.n16)
+        mn17 = HierarchicalModel.Node(self.n17)
+        mn18 = HierarchicalModel.Node(self.n18)
+        mn19 = HierarchicalModel.Node(self.n19)
+        mn20 = HierarchicalModel.Node(self.n20)
+        mn21 = HierarchicalModel.Node(self.n21)
+        mn22 = HierarchicalModel.Node(self.n22)
+        mn23 = HierarchicalModel.Node(self.n23)
+        mn24 = HierarchicalModel.Node(self.n24)
+        mn25 = HierarchicalModel.Node(self.n25)
+        mn26 = HierarchicalModel.Node(self.n26)
+        mn27 = HierarchicalModel.Node(self.n27)
+        mn28 = HierarchicalModel.Node(self.n28)
+        mn29 = HierarchicalModel.Node(self.n29)
+        mn30 = HierarchicalModel.Node(self.n30)
+        mn31 = HierarchicalModel.Node(self.n31)
+        mn32 = HierarchicalModel.Node(self.n32)
+
+        mn1.children = [mn2, mn3, mn4]
+        mn2.children = [mn5, mn6, mn7]
+        mn3.children = [mn8]
+        mn6.children = [mn9]
+        mn8.children = [mn10]
+        mn10.children = [mn11]
+
+        mn12.children = [mn13]
+        mn13.children = [mn14]
+
+        mn15.children = [mn16, mn17]
+
+        mn20.children = [mn21, mn22, mn23, mn24, mn25, mn26]
+        mn23.children = [mn27, mn28, mn29, mn30, mn31, mn32]
+
+        self.assertEqual(
+            self.n1.children(sibling_transform=lambda x: x.order_by("num")), mn1
+        )
+        self.assertEqual(
+            self.n2.children(sibling_transform=lambda x: x.order_by("num")), mn2
+        )
+        self.assertEqual(
+            self.n3.children(sibling_transform=lambda x: x.order_by("num")), mn3
+        )
+        self.assertEqual(
+            self.n4.children(sibling_transform=lambda x: x.order_by("num")), mn4
+        )
+        self.assertEqual(
+            self.n5.children(sibling_transform=lambda x: x.order_by("num")), mn5
+        )
+        self.assertEqual(
+            self.n6.children(sibling_transform=lambda x: x.order_by("num")), mn6
+        )
+        self.assertEqual(
+            self.n7.children(sibling_transform=lambda x: x.order_by("num")), mn7
+        )
+        self.assertEqual(
+            self.n8.children(sibling_transform=lambda x: x.order_by("num")), mn8
+        )
+        self.assertEqual(
+            self.n9.children(sibling_transform=lambda x: x.order_by("num")), mn9
+        )
+        self.assertEqual(
+            self.n10.children(sibling_transform=lambda x: x.order_by("num")), mn10
+        )
+        self.assertEqual(
+            self.n11.children(sibling_transform=lambda x: x.order_by("num")), mn11
+        )
+        self.assertEqual(
+            self.n12.children(sibling_transform=lambda x: x.order_by("num")), mn12
+        )
+        self.assertEqual(
+            self.n13.children(sibling_transform=lambda x: x.order_by("num")), mn13
+        )
+        self.assertEqual(
+            self.n14.children(sibling_transform=lambda x: x.order_by("num")), mn14
+        )
+        self.assertEqual(
+            self.n15.children(sibling_transform=lambda x: x.order_by("num")), mn15
+        )
+        self.assertEqual(
+            self.n16.children(sibling_transform=lambda x: x.order_by("num")), mn16
+        )
+        self.assertEqual(
+            self.n17.children(sibling_transform=lambda x: x.order_by("num")), mn17
+        )
+        self.assertEqual(
+            self.n18.children(sibling_transform=lambda x: x.order_by("num")), mn18
+        )
+        self.assertEqual(
+            self.n19.children(sibling_transform=lambda x: x.order_by("num")), mn19
+        )
+        self.assertEqual(
+            self.n20.children(sibling_transform=lambda x: x.order_by("num")), mn20
+        )
+        self.assertEqual(
+            self.n21.children(sibling_transform=lambda x: x.order_by("num")), mn21
+        )
+        self.assertEqual(
+            self.n22.children(sibling_transform=lambda x: x.order_by("num")), mn22
+        )
+        self.assertEqual(
+            self.n23.children(sibling_transform=lambda x: x.order_by("num")), mn23
+        )
+        self.assertEqual(
+            self.n24.children(sibling_transform=lambda x: x.order_by("num")), mn24
+        )
+        self.assertEqual(
+            self.n25.children(sibling_transform=lambda x: x.order_by("num")), mn25
+        )
+        self.assertEqual(
+            self.n26.children(sibling_transform=lambda x: x.order_by("num")), mn26
+        )
+        self.assertEqual(
+            self.n27.children(sibling_transform=lambda x: x.order_by("num")), mn27
+        )
+        self.assertEqual(
+            self.n28.children(sibling_transform=lambda x: x.order_by("num")), mn28
+        )
+        self.assertEqual(
+            self.n29.children(sibling_transform=lambda x: x.order_by("num")), mn29
+        )
+        self.assertEqual(
+            self.n30.children(sibling_transform=lambda x: x.order_by("num")), mn30
+        )
+        self.assertEqual(
+            self.n31.children(sibling_transform=lambda x: x.order_by("num")), mn31
+        )
+        self.assertEqual(
+            self.n32.children(sibling_transform=lambda x: x.order_by("num")), mn32
+        )
 
     def test_advanced_children_options(self):
         pass

@@ -27,8 +27,13 @@ class AdjacencyListModel(HierarchicalModel):
         self._parent = parent
         self.save(update_fields=["_parent"])
 
-    def direct_children(self: T) -> QuerySet[T]:
-        return self.__class__.objects.filter(_parent=self)
+    def direct_children(
+        self: T, transform: Callable[[QuerySet[T]], QuerySet[T]] | None = None
+    ) -> QuerySet[T]:
+        queryset = self.__class__.objects.filter(_parent=self)
+        if transform is not None:
+            queryset = transform(queryset)
+        return queryset
 
     def create_child(
         self: T, create_method: Callable[..., T] | None = None, **kwargs

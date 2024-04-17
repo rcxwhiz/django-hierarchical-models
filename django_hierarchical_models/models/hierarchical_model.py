@@ -77,6 +77,16 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
     ) -> T:
         pass
 
+    def detect_cycle(self: T) -> bool:
+        parent = self.parent()
+        seen_models = set()
+        while parent is not None:
+            if parent in seen_models:
+                return True
+            seen_models.add(parent)
+            parent = parent.parent()
+        return False
+
     def add_child(self: T, child: T, check_has_parent: bool = False):
         if check_has_parent and child.parent() is not None:
             raise AlreadyHasParentException(child)

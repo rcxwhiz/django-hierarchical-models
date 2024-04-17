@@ -2,6 +2,10 @@ from typing import TypeVar
 
 from django.test import TestCase
 
+from django_hierarchical_models.models.exceptions import (
+    AlreadyHasParentException,
+    NotAChildException,
+)
 from django_hierarchical_models.models.hierarchical_model import HierarchicalModel
 from tests.models import TestModelMixin
 
@@ -116,15 +120,46 @@ class HierarchicalModelTestCase(TestCase):
         child = self.create(2, parent=parent)
         self.assertQuerySetEqual(parent.direct_children(), {child})
 
+    def test_basic_child_transform(self):
+        n1 = self.create(1)
+        n2 = n1.create_child(num=2)
+        n3 = n1.create_child(num=3)
+        self.assertQuerySetEqual(
+            n1.direct_children(transform=lambda x: x.order_by("num")), [n2, n3]
+        )
+        self.assertQuerySetEqual(
+            n1.direct_children(transform=lambda x: x.order_by("-num")), [n3, n2]
+        )
+
     def test_basic_create_child(self):
         parent = self.create(1)
         child = parent.create_child(num=2)
         self.assertIsNone(parent.parent())
         self.assertEqual(child.parent(), parent)
 
+    def test_basic_add_child(self):
+        n1 = self.create(1)
+        n2 = self.create(2)
+        n1.add_child(n2)
+        self.assertEqual(n2.parent(), n1)
+        n3 = self.create(3)
+        with self.assertRaises(AlreadyHasParentException) as cm:
+            n3.add_child(n2, check_has_parent=True)
+        self.assertEqual(cm.exception.child, n2)
+        self.assertEqual(n2.parent(), n1)
+        n3.add_child(n2)
+        self.assertEqual(n2.parent(), n3)
+
     def test_basic_remove_child(self):
         parent = self.create(1)
         child = self.create(2, parent=parent)
+        parent.remove_child(child)
+        self.assertIsNone(child.parent())
+        with self.assertRaises(NotAChildException) as cm:
+            parent.remove_child(child, check_is_child=True)
+        self.assertEqual(cm.exception.child, child)
+        self.assertEqual(cm.exception.parent, parent)
+        self.assertIsNone(child.parent())
         parent.remove_child(child)
         self.assertIsNone(child.parent())
 
@@ -132,6 +167,28 @@ class HierarchicalModelTestCase(TestCase):
         parent = self.create(1)
         child = self.create(2, parent=parent)
         self.assertListEqual(child.ancestors(), [parent])
+
+    def test_basic_root(self):
+        n1 = self.create(1)
+        self.assertEqual(n1.root(), n1)
+        n2 = self.create(2)
+        n1.set_parent(n2)
+        self.assertEqual(n1.root(), n2)
+        n3 = self.create(3)
+        n2.set_parent(n3)
+        self.assertEqual(n1.root(), n3)
+
+    def test_basic_children(self):
+        n1 = self.create(1)
+        n2 = n1.create_child(num=2)
+        n3 = n1.create_child(num=3)
+        expected_children = HierarchicalModel.Node(
+            n1, [HierarchicalModel.Node(n2), HierarchicalModel.Node(n3)]
+        )
+        self.assertEqual(
+            n1.children(sibling_transform=lambda x: x.order_by("num")),
+            expected_children,
+        )
 
     def test_advanced_parent(self):
         self.assertIsNone(self.n1.parent())
@@ -236,3 +293,193 @@ class HierarchicalModelTestCase(TestCase):
         self.assertQuerySetEqual(self.n30.direct_children(), [])
         self.assertQuerySetEqual(self.n31.direct_children(), [])
         self.assertQuerySetEqual(self.n32.direct_children(), [])
+
+    def test_advanced_child_transform(self):
+        self.assertQuerySetEqual(
+            self.n1.direct_children(transform=lambda x: x.order_by("-num")),
+            [self.n4, self.n3, self.n2],
+        )
+        self.assertQuerySetEqual(
+            self.n2.direct_children(
+                transform=lambda x: x.filter(num__gt=5).order_by("num")
+            ),
+            [self.n6, self.n7],
+        )
+        self.assertQuerySetEqual(
+            self.n20.direct_children(
+                transform=lambda x: x.filter(num__gt=21, num__lt=26)
+            ),
+            [self.n22, self.n23, self.n24, self.n25],
+            ordered=False,
+        )
+
+    def test_advanced_create_child(self):
+        n33 = self.n1.create_child(num=33)
+        self.assertEqual(n33.parent(), self.n1)
+        self.assertQuerySetEqual(
+            self.n1.direct_children(), [self.n2, self.n3, self.n4, n33], ordered=False
+        )
+        self.assertEqual(self.n2.parent(), self.n1)
+        self.assertEqual(self.n3.parent(), self.n1)
+        self.assertEqual(self.n4.parent(), self.n1)
+
+    def test_advanced_add_child(self):
+        self.n1.add_child(self.n18)
+        self.assertEqual(self.n18.parent(), self.n1)
+        self.assertQuerySetEqual(
+            self.n1.direct_children(),
+            [self.n2, self.n3, self.n4, self.n18],
+            ordered=False,
+        )
+        self.assertQuerySetEqual(self.n18.direct_children(), [])
+        self.n12.add_child(self.n15)
+        self.assertEqual(self.n15.parent(), self.n12)
+        self.assertQuerySetEqual(
+            self.n12.direct_children(), [self.n13, self.n15], ordered=False
+        )
+        self.assertQuerySetEqual(
+            self.n15.direct_children(), [self.n16, self.n17], ordered=False
+        )
+        with self.assertRaises(AlreadyHasParentException) as cm:
+            self.n19.add_child(self.n21, check_has_parent=True)
+        self.assertEqual(cm.exception.child, self.n21)
+        self.assertEqual(self.n21.parent(), self.n20)
+        self.assertQuerySetEqual(self.n19.direct_children(), [])
+        self.n19.add_child(self.n21)
+        self.assertEqual(self.n21.parent(), self.n19)
+        self.assertQuerySetEqual(self.n19.direct_children(), [self.n21])
+        self.assertQuerySetEqual(self.n21.direct_children(), [])
+        self.assertQuerySetEqual(
+            self.n20.direct_children(),
+            [self.n22, self.n23, self.n24, self.n25, self.n26],
+            ordered=False,
+        )
+
+    def test_advanced_remove_child(self):
+        self.n1.remove_child(self.n3)
+        self.assertIsNone(self.n3.parent())
+        self.assertQuerySetEqual(
+            self.n1.direct_children(), [self.n2, self.n4], ordered=False
+        )
+        self.assertQuerySetEqual(self.n3.direct_children(), [self.n8])
+        self.n20.remove_child(self.n23)
+        self.assertIsNone(self.n23.parent())
+        self.assertQuerySetEqual(
+            self.n20.direct_children(),
+            [self.n21, self.n22, self.n24, self.n25, self.n26],
+            ordered=False,
+        )
+        self.assertQuerySetEqual(
+            self.n23.direct_children(),
+            [self.n27, self.n28, self.n29, self.n30, self.n31, self.n32],
+            ordered=False,
+        )
+        with self.assertRaises(NotAChildException) as cm:
+            self.n18.remove_child(self.n12, check_is_child=True)
+        self.assertEqual(cm.exception.child, self.n12)
+        self.assertEqual(cm.exception.parent, self.n18)
+        self.assertIsNone(self.n12.parent())
+        self.assertQuerySetEqual(self.n18.direct_children(), [])
+        self.assertQuerySetEqual(self.n12.direct_children(), [self.n13])
+        with self.assertRaises(NotAChildException) as cm:
+            self.n18.remove_child(self.n14, check_is_child=True)
+        self.assertEqual(cm.exception.child, self.n14)
+        self.assertEqual(cm.exception.parent, self.n18)
+        self.assertEqual(self.n14.parent(), self.n13)
+        self.assertQuerySetEqual(self.n18.direct_children(), [])
+        self.assertQuerySetEqual(self.n14.direct_children(), [])
+        self.n6.remove_child(self.n10)
+        self.assertEqual(self.n10.parent(), self.n8)
+        self.assertQuerySetEqual(self.n6.direct_children(), [self.n9])
+        self.assertQuerySetEqual(self.n8.direct_children(), [self.n10])
+        self.assertQuerySetEqual(self.n10.direct_children(), [self.n11])
+
+    def test_advanced_ancestors(self):
+        self.assertListEqual(self.n1.ancestors(), [])
+        self.assertListEqual(self.n2.ancestors(), [self.n1])
+        self.assertListEqual(self.n3.ancestors(), [self.n1])
+        self.assertListEqual(self.n4.ancestors(), [self.n1])
+        self.assertListEqual(self.n5.ancestors(), [self.n2, self.n1])
+        self.assertListEqual(self.n6.ancestors(), [self.n2, self.n1])
+        self.assertListEqual(self.n7.ancestors(), [self.n2, self.n1])
+        self.assertListEqual(self.n8.ancestors(), [self.n3, self.n1])
+        self.assertListEqual(self.n9.ancestors(), [self.n6, self.n2, self.n1])
+        self.assertListEqual(self.n10.ancestors(), [self.n8, self.n3, self.n1])
+        self.assertListEqual(
+            self.n11.ancestors(), [self.n10, self.n8, self.n3, self.n1]
+        )
+        self.assertListEqual(self.n12.ancestors(), [])
+        self.assertListEqual(self.n13.ancestors(), [self.n12])
+        self.assertListEqual(self.n14.ancestors(), [self.n13, self.n12])
+        self.assertListEqual(self.n15.ancestors(), [])
+        self.assertListEqual(self.n16.ancestors(), [self.n15])
+        self.assertListEqual(self.n17.ancestors(), [self.n15])
+        self.assertListEqual(self.n18.ancestors(), [])
+        self.assertListEqual(self.n19.ancestors(), [])
+        self.assertListEqual(self.n20.ancestors(), [])
+        self.assertListEqual(self.n21.ancestors(), [self.n20])
+        self.assertListEqual(self.n22.ancestors(), [self.n20])
+        self.assertListEqual(self.n23.ancestors(), [self.n20])
+        self.assertListEqual(self.n24.ancestors(), [self.n20])
+        self.assertListEqual(self.n25.ancestors(), [self.n20])
+        self.assertListEqual(self.n26.ancestors(), [self.n20])
+        self.assertListEqual(self.n27.ancestors(), [self.n23, self.n20])
+        self.assertListEqual(self.n28.ancestors(), [self.n23, self.n20])
+        self.assertListEqual(self.n29.ancestors(), [self.n23, self.n20])
+        self.assertListEqual(self.n30.ancestors(), [self.n23, self.n20])
+        self.assertListEqual(self.n31.ancestors(), [self.n23, self.n20])
+        self.assertListEqual(self.n32.ancestors(), [self.n23, self.n20])
+
+    def test_advanced_ancestors_options(self):
+        self.assertListEqual(self.n11.ancestors(max_level=0), [])
+        self.assertListEqual(self.n11.ancestors(max_level=1), [self.n10])
+        self.assertListEqual(self.n11.ancestors(max_level=2), [self.n10, self.n8])
+        self.assertListEqual(
+            self.n11.ancestors(max_level=3), [self.n10, self.n8, self.n3]
+        )
+        self.assertListEqual(
+            self.n11.ancestors(max_level=4), [self.n10, self.n8, self.n3, self.n1]
+        )
+        self.assertListEqual(
+            self.n11.ancestors(max_level=5), [self.n10, self.n8, self.n3, self.n1]
+        )
+
+    def test_advanced_root(self):
+        self.assertEqual(self.n1.root(), self.n1)
+        self.assertEqual(self.n2.root(), self.n1)
+        self.assertEqual(self.n3.root(), self.n1)
+        self.assertEqual(self.n4.root(), self.n1)
+        self.assertEqual(self.n5.root(), self.n1)
+        self.assertEqual(self.n6.root(), self.n1)
+        self.assertEqual(self.n7.root(), self.n1)
+        self.assertEqual(self.n8.root(), self.n1)
+        self.assertEqual(self.n9.root(), self.n1)
+        self.assertEqual(self.n10.root(), self.n1)
+        self.assertEqual(self.n11.root(), self.n1)
+        self.assertEqual(self.n12.root(), self.n12)
+        self.assertEqual(self.n13.root(), self.n12)
+        self.assertEqual(self.n14.root(), self.n12)
+        self.assertEqual(self.n15.root(), self.n15)
+        self.assertEqual(self.n16.root(), self.n15)
+        self.assertEqual(self.n17.root(), self.n15)
+        self.assertEqual(self.n18.root(), self.n18)
+        self.assertEqual(self.n19.root(), self.n19)
+        self.assertEqual(self.n20.root(), self.n20)
+        self.assertEqual(self.n21.root(), self.n20)
+        self.assertEqual(self.n22.root(), self.n20)
+        self.assertEqual(self.n23.root(), self.n20)
+        self.assertEqual(self.n24.root(), self.n20)
+        self.assertEqual(self.n25.root(), self.n20)
+        self.assertEqual(self.n26.root(), self.n20)
+        self.assertEqual(self.n27.root(), self.n20)
+        self.assertEqual(self.n28.root(), self.n20)
+        self.assertEqual(self.n29.root(), self.n20)
+        self.assertEqual(self.n30.root(), self.n20)
+        self.assertEqual(self.n31.root(), self.n20)
+        self.assertEqual(self.n32.root(), self.n20)
+
+    def test_advanced_children(self):
+        pass
+
+    def test_advanced_children_options(self):
+        pass

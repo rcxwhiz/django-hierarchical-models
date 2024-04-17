@@ -27,7 +27,19 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
             self, instance: T, children: list[HierarchicalModel.Node] | None = None
         ):
             self.instance = instance
-            self.children = children
+            self.children = children if children is not None else []
+
+        def __eq__(self, other):
+            if not isinstance(other, HierarchicalModel.Node):
+                return False
+            if self.instance != other.instance:
+                return False
+            if len(self.children) != len(other.children):
+                return False
+            return all(
+                self_child == other_child
+                for self_child, other_child in zip(self.children, other.children)
+            )
 
     @abstractmethod
     def parent(self: T) -> T | None:
@@ -49,22 +61,28 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
     ) -> T:
         pass
 
-    def add_child(self: T, child: T):
-        if child.parent() is not None:
+    def add_child(self: T, child: T, check_has_parent: bool = False):
+        if check_has_parent and child.parent() is not None:
             raise AlreadyHasParentException(child)
         child.set_parent(self)
 
-    def remove_child(self: T, child: T):
-        if child.parent() is not self:
+    def remove_child(self: T, child: T, check_is_child: bool = False):
+        if child.parent() is self:
+            child.set_parent(None)
+        elif check_is_child:
             raise NotAChildException(self, child)
-        child.set_parent(None)
 
     def ancestors(self: T, max_level: int | None = None) -> list[T]:
         if self.parent() is None or (max_level is not None and max_level <= 0):
             return []
         if max_level is not None:
             max_level -= 1
-        return self.parent().ancestors(max_level=max_level) + [self.parent()]
+        return [self.parent()] + self.parent().ancestors(max_level=max_level)
+
+    def root(self: T) -> T:
+        if self.parent() is None:
+            return self
+        return self.parent().root()
 
     def children(
         self: T,
@@ -100,7 +118,7 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
                 max_total is not None,
             )
         ]
-        f(root, max_generations, max_siblings, max_total)
+        f(root, max_generations, max_siblings, max_total, sibling_transform)
 
 
 def _no_no_no(

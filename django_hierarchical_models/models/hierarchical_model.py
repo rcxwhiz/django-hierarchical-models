@@ -71,11 +71,12 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
     ) -> QuerySet[T]:
         pass
 
-    @abstractmethod
     def create_child(
         self: T, create_method: Callable[..., T] | None = None, **kwargs
     ) -> T:
-        pass
+        if create_method is None:
+            create_method = self.__class__._default_manager.create
+        return create_method(parent=self, **kwargs)
 
     def detect_cycle(self: T) -> bool:
         parent = self.parent()

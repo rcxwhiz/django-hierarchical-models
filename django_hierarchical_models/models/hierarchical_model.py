@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from abc import ABCMeta, abstractmethod
 from collections import deque
 from collections.abc import Callable
@@ -40,6 +41,21 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
                 self_child == other_child
                 for self_child, other_child in zip(self.children, other.children)
             )
+
+        def __copy__(self):
+            return HierarchicalModel.Node(
+                self.instance, [copy.copy(child) for child in self.children]
+            )
+
+        def _p(self, s, indent=0, dash=False):
+            s[0] += f"\n{' ' * indent}{'- ' if dash else ''}{self.instance}"
+            for child in self.children:
+                child._p(s, indent + 2, True)
+
+        def __str__(self):
+            s = [""]
+            self._p(s)
+            return s[0]
 
     @abstractmethod
     def parent(self: T) -> T | None:

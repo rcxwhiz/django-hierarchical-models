@@ -1,3 +1,4 @@
+import copy
 from typing import TypeVar
 
 from django.test import TestCase
@@ -323,6 +324,16 @@ class HierarchicalModelTestCase(TestCase):
         self.assertEqual(self.n3.parent(), self.n1)
         self.assertEqual(self.n4.parent(), self.n1)
 
+        n34 = self.n1.create_child(
+            create_method=self.model_class.objects.create, num=34
+        )
+        self.assertEqual(n34.parent(), self.n1)
+        self.assertQuerySetEqual(
+            self.n1.direct_children(),
+            [self.n2, self.n3, self.n4, n33, n34],
+            ordered=False,
+        )
+
     def test_advanced_add_child(self):
         self.n1.add_child(self.n18)
         self.assertEqual(self.n18.parent(), self.n1)
@@ -625,4 +636,189 @@ class HierarchicalModelTestCase(TestCase):
         )
 
     def test_advanced_children_options(self):
-        pass
+        mn1 = HierarchicalModel.Node(self.n1)
+        mn2 = HierarchicalModel.Node(self.n2)
+        mn3 = HierarchicalModel.Node(self.n3)
+        mn4 = HierarchicalModel.Node(self.n4)
+        mn5 = HierarchicalModel.Node(self.n5)
+        mn6 = HierarchicalModel.Node(self.n6)
+        mn7 = HierarchicalModel.Node(self.n7)
+        mn8 = HierarchicalModel.Node(self.n8)
+        mn9 = HierarchicalModel.Node(self.n9)
+        mn10 = HierarchicalModel.Node(self.n10)
+        mn11 = HierarchicalModel.Node(self.n11)
+        mn12 = HierarchicalModel.Node(self.n12)
+        mn13 = HierarchicalModel.Node(self.n13)
+        mn14 = HierarchicalModel.Node(self.n14)
+        mn15 = HierarchicalModel.Node(self.n15)
+        mn16 = HierarchicalModel.Node(self.n16)
+        mn17 = HierarchicalModel.Node(self.n17)
+        mn20 = HierarchicalModel.Node(self.n20)
+        mn21 = HierarchicalModel.Node(self.n21)
+        mn22 = HierarchicalModel.Node(self.n22)
+        mn23 = HierarchicalModel.Node(self.n23)
+        mn24 = HierarchicalModel.Node(self.n24)
+        mn25 = HierarchicalModel.Node(self.n25)
+        mn26 = HierarchicalModel.Node(self.n26)
+        mn27 = HierarchicalModel.Node(self.n27)
+        mn28 = HierarchicalModel.Node(self.n28)
+        mn29 = HierarchicalModel.Node(self.n29)
+        mn30 = HierarchicalModel.Node(self.n30)
+        mn31 = HierarchicalModel.Node(self.n31)
+        mn32 = HierarchicalModel.Node(self.n32)
+
+        mn1.children = [mn2, mn3, mn4]
+        mn2.children = [mn5, mn6, mn7]
+        mn3.children = [mn8]
+        mn6.children = [mn9]
+        mn8.children = [mn10]
+        mn10.children = [mn11]
+
+        mn12.children = [mn13]
+        mn13.children = [mn14]
+
+        mn15.children = [mn16, mn17]
+
+        mn20.children = [mn21, mn22, mn23, mn24, mn25, mn26]
+        mn23.children = [mn27, mn28, mn29, mn30, mn31, mn32]
+
+        t1 = copy.copy(mn1)
+        t1.children[0].children[1].children = []
+        t1.children[1].children[0].children = []
+
+        self.assertEqual(
+            self.n1.children(
+                max_generations=2, sibling_transform=lambda x: x.order_by("num")
+            ),
+            t1,
+        )
+
+        t2 = copy.copy(mn1)
+        t2.children = t2.children[:2]
+        t2.children[0].children = t2.children[0].children[:2]
+
+        self.assertEqual(
+            self.n1.children(
+                max_siblings=2, sibling_transform=lambda x: x.order_by("num")
+            ),
+            t2,
+        )
+
+        t3 = copy.copy(mn1)
+        t3.children[0].children = t3.children[0].children[:2]
+        t3.children[0].children[1].children = []
+        t3.children[1].children = []
+
+        self.assertEqual(
+            self.n1.children(
+                max_total=6, sibling_transform=lambda x: x.order_by("num")
+            ),
+            t3,
+        )
+
+        t4 = copy.copy(mn1)
+        t4.children = t4.children[:2]
+        t4.children[0].children = t4.children[0].children[:2]
+        t4.children[1].children[0].children[0].children = []
+
+        self.assertEqual(
+            self.n1.children(
+                max_generations=3,
+                max_siblings=2,
+                sibling_transform=lambda x: x.order_by("num"),
+            ),
+            t4,
+        )
+
+        t5 = copy.copy(mn20)
+        t5.children = t5.children[:3]
+        t5.children[2].children = []
+
+        self.assertEqual(
+            self.n20.children(
+                max_generations=1,
+                max_siblings=3,
+                sibling_transform=lambda x: x.order_by("num"),
+            ),
+            t5,
+        )
+
+        t6 = copy.copy(mn20)
+        t6.children = t6.children[:4]
+        t6.children[2].children = t6.children[2].children[:1]
+
+        self.assertEqual(
+            self.n20.children(
+                max_siblings=4,
+                max_total=6,
+                sibling_transform=lambda x: x.order_by("num"),
+            ),
+            t6,
+        )
+
+        t7 = copy.copy(mn1)
+        t7.children = t7.children[:2]
+        t7.children[0].children = t7.children[0].children[:2]
+        t7.children[1].children[0].children = []
+
+        self.assertEqual(
+            self.n1.children(
+                max_generations=3,
+                max_siblings=2,
+                max_total=7,
+                sibling_transform=lambda x: x.order_by("num"),
+            ),
+            t7,
+        )
+
+        self.assertEqual(
+            self.n15.children(
+                max_generations=4, sibling_transform=lambda x: x.order_by("num")
+            ),
+            mn15,
+        )
+        self.assertEqual(
+            self.n15.children(
+                max_siblings=5, sibling_transform=lambda x: x.order_by("num")
+            ),
+            mn15,
+        )
+        self.assertEqual(
+            self.n15.children(
+                max_total=10, sibling_transform=lambda x: x.order_by("num")
+            ),
+            mn15,
+        )
+        self.assertEqual(
+            self.n15.children(
+                max_generations=4,
+                max_siblings=5,
+                sibling_transform=lambda x: x.order_by("num"),
+            ),
+            mn15,
+        )
+        self.assertEqual(
+            self.n15.children(
+                max_generations=4,
+                max_total=10,
+                sibling_transform=lambda x: x.order_by("num"),
+            ),
+            mn15,
+        )
+        self.assertEqual(
+            self.n15.children(
+                max_siblings=5,
+                max_total=10,
+                sibling_transform=lambda x: x.order_by("num"),
+            ),
+            mn15,
+        )
+        self.assertEqual(
+            self.n15.children(
+                max_generations=4,
+                max_siblings=5,
+                max_total=10,
+                sibling_transform=lambda x: x.order_by("num"),
+            ),
+            mn15,
+        )

@@ -38,7 +38,9 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
         pass
 
     @abstractmethod
-    def direct_children(self: T) -> QuerySet[T]:
+    def direct_children(
+        self: T, transform: Callable[[QuerySet[T]], QuerySet[T]] | None = None
+    ) -> QuerySet[T]:
         pass
 
     @abstractmethod
@@ -69,6 +71,7 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
         max_generations: int | None = None,
         max_siblings: int | None = None,
         max_total: int | None = None,
+        sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None = None,
     ) -> HierarchicalModel.Node:
         root = HierarchicalModel.Node(self)
         if (
@@ -77,7 +80,9 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
             or (max_total is not None and max_total < 2)
         ):
             return root
-        self._child_finder(root, max_generations, max_siblings, max_total)
+        self._child_finder(
+            root, max_generations, max_siblings, max_total, sibling_transform
+        )
         return root
 
     def _child_finder(
@@ -86,6 +91,7 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
         max_generations: int | None,
         max_siblings: int | None,
         max_total: int | None,
+        sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
     ):
         f = _dispatch_table[
             (
@@ -102,12 +108,13 @@ def _no_no_no(
     max_generations: int,
     max_siblings: int,
     max_total: int,
+    sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
 ):
     queue = deque([(HierarchicalModel.Node(None), root)])
     while queue:
         parent_node, node = queue.popleft()
         parent_node.children.append(node)
-        for child in node.instance.direct_children():
+        for child in node.instance.direct_children(sibling_transform):
             child_node = HierarchicalModel.Node(child)
             queue.append((node, child_node))
 
@@ -117,13 +124,14 @@ def _yes_no_no(
     max_generations: int,
     max_siblings: int,
     max_total: int,
+    sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
 ):
     queue = deque([(HierarchicalModel.Node(None), root, 0)])
     while queue:
         parent_node, node, generation = queue.popleft()
         parent_node.children.append(node)
         if generation < max_generations:
-            for child in node.instance.direct_children():
+            for child in node.instance.direct_children(sibling_transform):
                 child_node = HierarchicalModel.Node(child)
                 queue.append((node, child_node, generation + 1))
 
@@ -133,12 +141,13 @@ def _no_yes_no(
     max_generations: int,
     max_siblings: int,
     max_total: int,
+    sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
 ):
     queue = deque([(HierarchicalModel.Node(None), root)])
     while queue:
         parent_node, node = queue.popleft()
         parent_node.children.append(node)
-        for child in node.instance.direct_children()[:max_siblings]:
+        for child in node.instance.direct_children(sibling_transform)[:max_siblings]:
             child_node = HierarchicalModel.Node(child)
             queue.append((node, child_node))
 
@@ -148,13 +157,14 @@ def _no_no_yes(
     max_generations: int,
     max_siblings: int,
     max_total: int,
+    sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
 ):
     queue = deque([(HierarchicalModel.Node(None), root)])
     max_total -= 1
     while queue:
         parent_node, node = queue.popleft()
         parent_node.children.append(node)
-        for child in node.instance.direct_children()[:max_total]:
+        for child in node.instance.direct_children(sibling_transform)[:max_total]:
             child_node = HierarchicalModel.Node(child)
             queue.append((node, child_node))
             max_total -= 1
@@ -165,13 +175,16 @@ def _yes_yes_no(
     max_generations: int,
     max_siblings: int,
     max_total: int,
+    sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
 ):
     queue = deque([(HierarchicalModel.Node(None), root, 0)])
     while queue:
         parent_node, node, generation = queue.popleft()
         parent_node.children.append(node)
         if generation < max_generations:
-            for child in node.instance.direct_children()[:max_siblings]:
+            for child in node.instance.direct_children(sibling_transform)[
+                :max_siblings
+            ]:
                 child_node = HierarchicalModel.Node(child)
                 queue.append((node, child_node, generation + 1))
 
@@ -181,6 +194,7 @@ def _yes_no_yes(
     max_generations: int,
     max_siblings: int,
     max_total: int,
+    sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
 ):
     queue = deque([(HierarchicalModel.Node(None), root, 0)])
     max_total -= 1
@@ -188,7 +202,7 @@ def _yes_no_yes(
         parent_node, node, generation = queue.popleft()
         parent_node.children.append(node)
         if generation < max_generations:
-            for child in node.instance.direct_children()[:max_total]:
+            for child in node.instance.direct_children(sibling_transform)[:max_total]:
                 child_node = HierarchicalModel.Node(child)
                 queue.append((node, child_node, generation + 1))
                 max_total -= 1
@@ -199,6 +213,7 @@ def _no_yes_yes(
     max_generations: int,
     max_siblings: int,
     max_total: int,
+    sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
 ):
     queue = deque([(HierarchicalModel.Node(None), root)])
     max_total -= 1
@@ -206,7 +221,7 @@ def _no_yes_yes(
         parent_node, node = queue.popleft()
         parent_node.children.append(node)
         num_siblings = min(max_siblings, max_total)
-        for child in node.instance.direct_children()[:num_siblings]:
+        for child in node.instance.direct_children(sibling_transform)[:num_siblings]:
             child_node = HierarchicalModel.Node(child)
             queue.append((node, child_node))
             max_total -= 1
@@ -217,6 +232,7 @@ def _yes_yes_yes(
     max_generations: int,
     max_siblings: int,
     max_total: int,
+    sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
 ):
     queue = deque([(HierarchicalModel.Node(None), root, 0)])
     max_total -= 1
@@ -225,7 +241,9 @@ def _yes_yes_yes(
         parent_node.children.append(node)
         if generation < max_generations:
             num_siblings = min(max_siblings, max_total)
-            for child in node.instance.direct_children()[:num_siblings]:
+            for child in node.instance.direct_children(sibling_transform)[
+                :num_siblings
+            ]:
                 child_node = HierarchicalModel.Node(child)
                 queue.append((node, child_node, generation + 1))
                 max_total -= 1

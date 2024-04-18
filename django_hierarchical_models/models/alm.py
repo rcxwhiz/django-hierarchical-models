@@ -30,7 +30,7 @@ class AdjacencyListModel(HierarchicalModel):
     def direct_children(
         self: T, transform: Callable[[QuerySet[T]], QuerySet[T]] | None = None
     ) -> QuerySet[T]:
-        queryset = self.__class__._default_manager.filter(_parent=self)
+        queryset = self._manager.filter(_parent=self)
         if transform is not None:
             queryset = transform(queryset)
         return queryset

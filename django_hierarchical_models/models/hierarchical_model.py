@@ -147,6 +147,10 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
         ]
         f(root, max_generations, max_siblings, max_total, sibling_transform)
 
+    @property
+    def _manager(self):
+        return self.__class__._default_manager
+
 
 def _no_no_no(
     root: HierarchicalModel.Node,

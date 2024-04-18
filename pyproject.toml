@@ -33,7 +33,7 @@ pythonpath = "."
 addopts = [
     "tests/interface_tests.py::ALMInterfaceTest",
     "tests/interface_tests.py::NSMInterfaceTest",
-    "tests/alm_tests.py::NSMTests"
+    "tests/nsm_tests.py::NSMTests"
 ]
 
 [tool.isort]

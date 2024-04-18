@@ -18,4 +18,5 @@ class ALMTestModel(TestModelMixin, AdjacencyListModel):
 
 
 class NSMTestModel(TestModelMixin, NestedSetModel):
-    pass
+    def __str__(self):
+        return f"({self.num}|{self._left}|{self._right})"

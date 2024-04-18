@@ -16,7 +16,7 @@ class AdjacencyListModel(HierarchicalModel):
         abstract = True
 
     def __init__(self, *args, **kwargs):
-        if "parent" in kwargs:
+        if len(args) == 0 and "parent" in kwargs:
             kwargs["_parent"] = kwargs.pop("parent")
         super().__init__(*args, **kwargs)
 

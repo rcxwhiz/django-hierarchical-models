@@ -18,7 +18,7 @@ class TestHierarchicalModel(TestModelMixin, HierarchicalModel):
 T = TypeVar("T", bound=TestHierarchicalModel)
 
 
-class HierarchicalModelTestCase(TestCase):
+class HierarchicalModelInterfaceTest(TestCase):
     model_class: T
 
     def create(self, num: int, **kwargs) -> T:

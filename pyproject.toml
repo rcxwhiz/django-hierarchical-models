@@ -31,8 +31,9 @@ django_find_project = "false"
 DJANGO_SETTINGS_MODULE = "tests.settings"
 pythonpath = "."
 addopts = [
-    "tests/implementation_tests.py::AdjacencyListModelTests",
-    "tests/implementation_tests.py::NestedSetModelTests"
+    "tests/interface_tests.py::ALMInterfaceTest",
+    "tests/interface_tests.py::NSMInterfaceTest",
+    "tests/alm_tests.py::NSMTests"
 ]
 
 [tool.isort]

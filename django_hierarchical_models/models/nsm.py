@@ -208,11 +208,9 @@ class NestedSetModel(HierarchicalModel):
         direct_children = []
         while children_chunk.exists():
             next_child = children_chunk.first()
-            direct_children.append(next_child)
+            direct_children.append(next_child.pk)
             children_chunk = children_chunk.filter(_left__gt=next_child._right)
-        direct_children_queryset = self._manager.in_bulk(
-            child.pk for child in direct_children
-        )
+        direct_children_queryset = self._manager.filter(pk__in=direct_children)
         if transform is not None:
             direct_children_queryset = transform(direct_children_queryset)
         return direct_children_queryset
@@ -225,3 +223,6 @@ class NestedSetModel(HierarchicalModel):
         if not parents_query.exists():
             return self
         return parents_query.order_by("_left").first()
+
+    def num_children(self) -> int:
+        return (self._right - self._left) / 2

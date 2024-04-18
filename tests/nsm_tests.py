@@ -215,3 +215,6 @@ class NSMTests(TestCase):
         self.assert_chunk(n5, 4, 11)
         self.assert_chunk(n6, 0, 13)
         self.assert_chunk(n7, 2, 3)
+
+    # TODO write an unconsolidate test where I create the
+    #  nodes as children of each other, then slowly separate them out

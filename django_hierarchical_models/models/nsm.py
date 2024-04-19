@@ -225,4 +225,4 @@ class NestedSetModel(HierarchicalModel):
         return parents_query.order_by("_left").first()
 
     def num_children(self) -> int:
-        return (self._right - self._left - 1) / 2
+        return (self._right - self._left) // 2

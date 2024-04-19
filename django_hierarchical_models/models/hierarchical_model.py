@@ -7,7 +7,7 @@ from collections.abc import Callable
 from typing import TypeVar
 
 from django.db import models
-from django.db.models import QuerySet
+from django.db.models import Manager, QuerySet
 
 from django_hierarchical_models.models.exceptions import (
     AlreadyHasParentException,
@@ -75,7 +75,7 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
         self: T, create_method: Callable[..., T] | None = None, **kwargs
     ) -> T:
         if create_method is None:
-            create_method = self.__class__._default_manager.create
+            create_method = self._manager.create
         return create_method(parent=self, **kwargs)
 
     def detect_cycle(self: T) -> bool:
@@ -94,7 +94,7 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
         child.set_parent(self)
 
     def remove_child(self: T, child: T, check_is_child: bool = False):
-        if child.parent() is self:
+        if child.parent() == self:
             child.set_parent(None)
         elif check_is_child:
             raise NotAChildException(self, child)
@@ -148,7 +148,7 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
         f(root, max_generations, max_siblings, max_total, sibling_transform)
 
     @property
-    def _manager(self):
+    def _manager(self: T) -> Manager[T]:
         return self.__class__._default_manager
 
 

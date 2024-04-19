@@ -31,6 +31,7 @@ class NestedSetModel(HierarchicalModel):
         if len(args) == 0:
             if "parent" in kwargs:
                 parent = kwargs.pop("parent")
+                parent.refresh_from_db(fields=("_left", "_right"))
                 kwargs["_left"] = parent._right
                 kwargs["_right"] = parent._right + 1
                 right_of_parent = self._manager.filter(_left__gt=parent._right)

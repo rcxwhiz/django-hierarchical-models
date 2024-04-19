@@ -1004,3 +1004,5 @@ class HierarchicalModelInterfaceTest(TestCase):
             ),
             mn15,
         )
+
+    # TODO test(s) involving deletes

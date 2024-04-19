@@ -216,9 +216,6 @@ class NSMTests(TestCase):
         self.assert_chunk(n6, 0, 13)
         self.assert_chunk(n7, 2, 3)
 
-    # TODO write an unconsolidate test where I create the
-    #  nodes as children of each other, then slowly separate them out
-    #  this should be an interface test?
     def test_deconsolidate(self):
         # ASSUMES CONSOLIDATE IS PASSING
         n1 = NSMTestModel.objects.create(num=1)
@@ -235,66 +232,107 @@ class NSMTests(TestCase):
         n3.set_parent(n1)
         n2.set_parent(n6)
 
-        n4.set_parent(None)
-        self.assert_chunk(n1, 5, 8)
-        self.assert_chunk(n2, 1, 10)
-        self.assert_chunk(n3, 6, 7)
-        self.assert_chunk(n4, 12, 13)
-        self.assert_chunk(n5, 4, 9)
-        self.assert_chunk(n6, 0, 11)
-        self.assert_chunk(n7, 2, 3)
+        # check that consolidation passed
+        for chunk in (
+            (n1, 5, 8),
+            (n2, 1, 12),
+            (n3, 6, 7),
+            (n4, 9, 10),
+            (n5, 4, 11),
+            (n6, 0, 13),
+            (n7, 2, 3),
+        ):
+            chunk[0].refresh_from_db()
+            self.assert_chunk(*chunk)
 
-        n6.set_parent(None)
-        self.assert_chunk(n1, 6, 9)
-        self.assert_chunk(n2, 2, 11)
-        self.assert_chunk(n3, 7, 8)
-        self.assert_chunk(n4, 12, 13)
-        self.assert_chunk(n5, 5, 10)
-        self.assert_chunk(n6, 0, 1)
-        self.assert_chunk(n7, 3, 4)
+        n4.set_parent(None)
+        for chunk in (
+            (n1, 5, 8),
+            (n2, 1, 10),
+            (n3, 6, 7),
+            (n4, 12, 13),
+            (n5, 4, 9),
+            (n6, 0, 11),
+            (n7, 2, 3),
+        ):
+            chunk[0].refresh_from_db()
+            self.assert_chunk(*chunk)
 
         n2.set_parent(None)
-        self.assert_chunk(n1, 6, 7)
-        self.assert_chunk(n2, 2, 9)
-        self.assert_chunk(n3, 10, 11)
-        self.assert_chunk(n4, 12, 13)
-        self.assert_chunk(n5, 5, 8)
-        self.assert_chunk(n6, 0, 1)
-        self.assert_chunk(n7, 3, 4)
+        for chunk in (
+            (n1, 6, 9),
+            (n2, 2, 11),
+            (n3, 7, 8),
+            (n4, 12, 13),
+            (n5, 5, 10),
+            (n6, 0, 1),
+            (n7, 3, 4),
+        ):
+            chunk[0].refresh_from_db()
+            self.assert_chunk(*chunk)
 
         n3.set_parent(None)
-        self.assert_chunk(n1, 6, 7)
-        self.assert_chunk(n2, 4, 9)
-        self.assert_chunk(n3, 10, 11)
-        self.assert_chunk(n4, 12, 13)
-        self.assert_chunk(n5, 5, 8)
-        self.assert_chunk(n6, 0, 1)
-        self.assert_chunk(n7, 2, 3)
+        for chunk in (
+            (n1, 6, 7),
+            (n2, 2, 9),
+            (n3, 10, 11),
+            (n4, 12, 13),
+            (n5, 5, 8),
+            (n6, 0, 1),
+            (n7, 3, 4),
+        ):
+            chunk[0].refresh_from_db()
+            self.assert_chunk(*chunk)
 
         n7.set_parent(None)
-        self.assert_chunk(n1, 7, 8)
-        self.assert_chunk(n2, 4, 5)
-        self.assert_chunk(n3, 10, 11)
-        self.assert_chunk(n4, 12, 13)
-        self.assert_chunk(n5, 6, 9)
-        self.assert_chunk(n6, 0, 1)
-        self.assert_chunk(n7, 2, 3)
+        for chunk in (
+            (n1, 6, 7),
+            (n2, 4, 9),
+            (n3, 10, 11),
+            (n4, 12, 13),
+            (n5, 5, 8),
+            (n6, 0, 1),
+            (n7, 2, 3),
+        ):
+            chunk[0].refresh_from_db()
+            self.assert_chunk(*chunk)
+
+        n5.set_parent(None)
+        for chunk in (
+            (n1, 7, 8),
+            (n2, 4, 5),
+            (n3, 10, 11),
+            (n4, 12, 13),
+            (n5, 6, 9),
+            (n6, 0, 1),
+            (n7, 2, 3),
+        ):
+            chunk[0].refresh_from_db()
+            self.assert_chunk(*chunk)
 
         n1.set_parent(None)
-        self.assert_chunk(n1, 8, 9)
-        self.assert_chunk(n2, 4, 5)
-        self.assert_chunk(n3, 10, 11)
-        self.assert_chunk(n4, 12, 13)
-        self.assert_chunk(n5, 6, 7)
-        self.assert_chunk(n6, 0, 1)
-        self.assert_chunk(n7, 2, 3)
+        for chunk in (
+            (n1, 8, 9),
+            (n2, 4, 5),
+            (n3, 10, 11),
+            (n4, 12, 13),
+            (n5, 6, 7),
+            (n6, 0, 1),
+            (n7, 2, 3),
+        ):
+            chunk[0].refresh_from_db()
+            self.assert_chunk(*chunk)
 
         # nothing happens here, everything is already orphaned
-        n5.set_parent(None)
-        self.assert_chunk(n1, 8, 9)
-        self.assert_chunk(n2, 4, 5)
-        self.assert_chunk(n3, 10, 11)
-        self.assert_chunk(n4, 12, 13)
-        self.assert_chunk(n5, 6, 7)
-        self.assert_chunk(n6, 0, 1)
-        self.assert_chunk(n7, 2, 3)
+        n6.set_parent(None)
+        for chunk in (
+            (n1, 8, 9),
+            (n2, 4, 5),
+            (n3, 10, 11),
+            (n4, 12, 13),
+            (n5, 6, 7),
+            (n6, 0, 1),
+            (n7, 2, 3),
+        ):
+            chunk[0].refresh_from_db()
+            self.assert_chunk(*chunk)

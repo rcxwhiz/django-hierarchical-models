@@ -71,6 +71,9 @@ class NestedSetModel(HierarchicalModel):
             # left and right were updated by the call to parent()
             return
 
+        if parent is not None:
+            parent.refresh_from_db(fields=("_left", "_right"))
+
         self_chunk_size = self._right - self._left + 1
         self_chunk_items = (
             item.pk

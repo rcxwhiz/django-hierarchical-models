@@ -46,17 +46,17 @@ class NestedSetModel(HierarchicalModel):
         super().__init__(*args, **kwargs)
 
     def delete(self, using=None, keep_parents=False):
-        root = self.root()
-        if root == self:
-            children_chunk = self._manager.filter(
-                _left__gt=self._left, _right__lt=self._right
-            )
-            to_right_chunk = self._manager.filter(_left__gt=self._right)
-            self._shift_chunk(children_chunk, -1, -1)
-            self._shift_chunk(to_right_chunk, -2, -2)
-        else:
-            # TODO not dealing with deleting when a child yet
-            pass
+        skin_chunk = self._manager.filter(_left__lt=self._left, _right__gt=self._right)
+        children_chunk = self._manager.filter(
+            _left__gt=self._left, _right__lt=self._right
+        )
+        to_right_chunk = self._manager.filter(_left__gt=self._right)
+
+        self._shift_chunk(skin_chunk, 0, -2)
+        self._shift_chunk(children_chunk, -1, -1)
+        self._shift_chunk(to_right_chunk, -2, -2)
+
+        super().delete(using=using, keep_parents=keep_parents)
 
     def parent(self: T) -> T | None:
         self.refresh_from_db(fields=("_left", "_right"))

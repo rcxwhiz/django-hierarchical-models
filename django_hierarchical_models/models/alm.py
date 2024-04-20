@@ -8,18 +8,31 @@ from .hierarchical_model import HierarchicalModel, T
 
 
 class AdjacencyListModel(HierarchicalModel):
+    """Adjacency List Model implementation of HierarchicalModel.
+
+    Class description here.
+
+    """
+
+    # ------------------------ class members -------------------------------- #
 
     _parent = models.ForeignKey(
         "self", on_delete=models.SET_NULL, blank=True, null=True
     )
 
-    class Meta:
-        abstract = True
+    # ------------------------ builtin methods ------------------------------ #
 
     def __init__(self, *args, **kwargs):
         if len(args) == 0 and "parent" in kwargs:
             kwargs["_parent"] = kwargs.pop("parent")
         super().__init__(*args, **kwargs)
+
+    # ------------------------ override models.Model ------------------------ #
+
+    class Meta:
+        abstract = True
+
+    # ------------------------ override HierarchicalModel ------------------- #
 
     @override
     def parent(self: T) -> T | None:

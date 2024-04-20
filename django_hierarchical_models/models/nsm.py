@@ -14,33 +14,14 @@ class NestedSetModel(HierarchicalModel):
 
     """
 
+    # ------------------------ class members -------------------------------- #
+
     _left = models.PositiveIntegerField()
     _right = models.PositiveIntegerField()
 
-    def _shift_chunk(self: T, chunk: QuerySet[T], left_shift: int, right_shift: int):
-        if left_shift != 0:
-            if right_shift != 0:
-                chunk.update(
-                    _left=F("_left") + left_shift, _right=F("_right") + right_shift
-                )
-            else:
-                chunk.update(_left=F("_left") + left_shift)
-        elif right_shift != 0:
-            chunk.update(_right=F("_right") + right_shift)
-
-    class Meta:
-        abstract = True
+    # ------------------------ builtin methods ------------------------------ #
 
     def __init__(self, *args, **kwargs):
-        """Initialize new NestedSetModel.
-
-        If "parent" is present in the kwargs, it is used to initialize this instance
-        with that model as a parent.
-
-        Args:
-            args: Used internally by Django
-            kwargs: Looks for "parent"
-        """
         if len(args) == 0:
             if "parent" in kwargs:
                 parent = kwargs.pop("parent")
@@ -59,6 +40,11 @@ class NestedSetModel(HierarchicalModel):
                 kwargs["_right"] = right_most_value + 2
         super().__init__(*args, **kwargs)
 
+    # ------------------------ override models.Model ------------------------ #
+
+    class Meta:
+        abstract = True
+
     @override
     def delete(self, using=None, keep_parents=False):
         skin_chunk = self._manager.filter(_left__lt=self._left, _right__gt=self._right)
@@ -72,6 +58,8 @@ class NestedSetModel(HierarchicalModel):
         self._shift_chunk(to_right_chunk, -2, -2)
 
         super().delete(using=using, keep_parents=keep_parents)
+
+    # ------------------------ override HierarchicalModel ------------------- #
 
     @override
     def parent(self: T) -> T | None:
@@ -252,5 +240,20 @@ class NestedSetModel(HierarchicalModel):
             return self
         return parents_query.order_by("_left").first()
 
+    # ------------------------ public class methods ------------------------- #
+
     def num_children(self) -> int:
         return (self._right - self._left) // 2
+
+    # ------------------------ private class methods ------------------------ #
+
+    def _shift_chunk(self: T, chunk: QuerySet[T], left_shift: int, right_shift: int):
+        if left_shift != 0:
+            if right_shift != 0:
+                chunk.update(
+                    _left=F("_left") + left_shift, _right=F("_right") + right_shift
+                )
+            else:
+                chunk.update(_left=F("_left") + left_shift)
+        elif right_shift != 0:
+            chunk.update(_right=F("_right") + right_shift)

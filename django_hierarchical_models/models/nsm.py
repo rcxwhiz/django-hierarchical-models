@@ -7,8 +7,18 @@ from django_hierarchical_models.models.hierarchical_model import HierarchicalMod
 class NestedSetModel(HierarchicalModel):
     """Nested Set Model implementation of HierarchicalModel.
 
-    Class description here.
+    Each model has two integer fields, a left and a right. In NSM, if a model's
+    left value is lower than another, and it's right value is higher, the
+    second model is encapsulated by the first, and it is a child.
 
+    This implementation is very efficient for querying, but not so efficient
+    for editing. It is possible for every single left and right value in the
+    database to be decremented by one operation. This is countered by the
+    excellent query performance of this model.
+
+    Attributes:
+        _left: holds the left bound for this instance.
+        _right: holds the right bound for this instance.
     """
 
     # ------------------------ class members -------------------------------- #
@@ -43,6 +53,7 @@ class NestedSetModel(HierarchicalModel):
         abstract = True
 
     def delete(self, using=None, keep_parents=False):
+        """Necessary to "free up" space."""
         skin_chunk = self._manager.filter(_left__lt=self._left, _right__gt=self._right)
         children_chunk = self._manager.filter(
             _left__gt=self._left, _right__lt=self._right
@@ -58,6 +69,18 @@ class NestedSetModel(HierarchicalModel):
     # ------------------------ override HierarchicalModel ------------------- #
 
     def parent(self: T) -> T | None:
+        """The parent of the AdjacencyModel instance.
+
+        Triggers a partial refresh_from_db()
+
+        Queries for models with lower _left and higher _right values, then
+        returns the one with the highest _left value, meaning the one closest
+        to this instance.
+
+        Returns:
+            Parent instance, or None if there is no parent.
+        """
+
         self.refresh_from_db(fields=("_left", "_right"))
         return (
             self._manager.filter(_left__lt=self._left, _right__gt=self._right)
@@ -66,11 +89,34 @@ class NestedSetModel(HierarchicalModel):
         )
 
     def is_child_of(self: T, parent: T) -> bool:
+        """Checks if the instance is at any level a child to the parent.
+
+        The only test to do where is whether the parent's _left and _right are
+        smaller and larger than the values of this instance.
+        """
+
         self.refresh_from_db(fields=("_left",))
         parent.refresh_from_db(fields=("_left", "_right"))
         return parent._left < self._left < parent._right
 
     def _set_parent(self: T, parent: T | None):
+        """Assigns the given model as the parent.
+
+        This method tries to find the direction to shift models that will result
+        in the least database updates. After that, it is a matter of which
+        models are having their _left and _right members shifted by how much.
+
+        Due to the trouble that cycles pose to these data structures, a check
+        is made if the parent is already a child to this model in any way.
+
+        Some models in which it is possible to represent a cycle have a
+        .set_parent_unchecked() method which will skip this step. That method
+        should be used with great care since it can be extremely difficult to
+        repair models that have cycles.
+
+        Raises:
+            CycleException: A cycle would be formed by this operation - skipped.
+        """
         if parent == self.parent():
             # left and right were updated by the call to parent()
             return
@@ -206,6 +252,18 @@ class NestedSetModel(HierarchicalModel):
         self._shift_chunk(self_chunk, *self_shift)
 
     def direct_children(self: T) -> QuerySet[T]:
+        """Gets all the direct descendants of a model.
+
+        If there are no children the QuerySet will be emtpy.
+
+        This method first queries for models that are within the bounds of this
+        instance. After that they are ordered by smallest and the first is
+        selected. The next child *after* the _right value of that child is
+        chosen. This skips the grandchildren contained in those children.
+
+        Returns:
+            An unordered QuerySet of all direct children of this model.
+        """
         self.refresh_from_db(fields=("_left", "_right"))
         children_chunk = self._manager.filter(
             _left__gt=self._left, _right__lt=self._right

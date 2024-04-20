@@ -23,6 +23,12 @@ class HierarchicalModelABCMeta(ABCMeta, type(models.Model)):
 
 
 class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
+    """Django Model with support for hierarchical data.
+
+    This interface is implemented multiple times with different tradeoffs.
+    Because of the advantages of some implementations, they might have methods
+    available which are not available on the interface.
+    """
 
     # ------------------------ override models.Model ------------------------ #
 
@@ -38,7 +44,7 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
         Can trigger a `refresh_from_db` for certain internal fields.
 
         Returns:
-            Returns the instance of the parent, or None if there is no parent.
+            Parent instance, or None if there is no parent.
         """
         pass
 
@@ -279,8 +285,7 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
             self._p(s)
             return s[0]
 
-
-# ------------------------ dispatch functions ------------------------------- #
+    # ------------------------ dispatch functions --------------------------- #
 
 
 def _no_no_no(

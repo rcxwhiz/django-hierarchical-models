@@ -24,6 +24,9 @@ class HierarchicalModelABCMeta(ABCMeta, type(models.Model)):
 
 class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
 
+    class Meta:
+        abstract = True
+
     class Node:
         def __init__(
             self, instance: T, children: list[HierarchicalModel.Node] | None = None

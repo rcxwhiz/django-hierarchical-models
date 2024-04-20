@@ -21,6 +21,7 @@ class AdjacencyListModel(HierarchicalModel):
         super().__init__(*args, **kwargs)
 
     def parent(self: T) -> T | None:
+        self.refresh_from_db(fields=("_parent",))
         return self._parent
 
     def is_child_of(self: T, parent: T):

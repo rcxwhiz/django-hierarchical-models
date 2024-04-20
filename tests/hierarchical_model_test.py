@@ -126,12 +126,8 @@ class HierarchicalModelInterfaceTest(TestCase):
         n1 = self.create(1)
         n2 = n1.create_child(num=2)
         n3 = n1.create_child(num=3)
-        self.assertQuerySetEqual(
-            n1.direct_children(transform=lambda x: x.order_by("num")), [n2, n3]
-        )
-        self.assertQuerySetEqual(
-            n1.direct_children(transform=lambda x: x.order_by("-num")), [n3, n2]
-        )
+        self.assertQuerySetEqual(n1.direct_children().order_by("num"), [n2, n3])
+        self.assertQuerySetEqual(n1.direct_children().order_by("-num"), [n3, n2])
 
     def test_basic_create_child(self):
         parent = self.create(1)
@@ -315,19 +311,15 @@ class HierarchicalModelInterfaceTest(TestCase):
 
     def test_advanced_child_transform(self):
         self.assertQuerySetEqual(
-            self.n1.direct_children(transform=lambda x: x.order_by("-num")),
+            self.n1.direct_children().order_by("-num"),
             [self.n4, self.n3, self.n2],
         )
         self.assertQuerySetEqual(
-            self.n2.direct_children(
-                transform=lambda x: x.filter(num__gt=5).order_by("num")
-            ),
+            self.n2.direct_children().filter(num__gt=5).order_by("num"),
             [self.n6, self.n7],
         )
         self.assertQuerySetEqual(
-            self.n20.direct_children(
-                transform=lambda x: x.filter(num__gt=21, num__lt=26)
-            ),
+            self.n20.direct_children().filter(num__gt=21, num__lt=26),
             [self.n22, self.n23, self.n24, self.n25],
             ordered=False,
         )

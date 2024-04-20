@@ -1,4 +1,3 @@
-from collections.abc import Callable
 from typing import override
 
 from django.db import models
@@ -54,10 +53,5 @@ class AdjacencyListModel(HierarchicalModel):
         self.save(update_fields=["_parent"])
 
     @override
-    def direct_children(
-        self: T, transform: Callable[[QuerySet[T]], QuerySet[T]] | None = None
-    ) -> QuerySet[T]:
-        queryset = self._manager.filter(_parent=self)
-        if transform is not None:
-            queryset = transform(queryset)
-        return queryset
+    def direct_children(self: T) -> QuerySet[T]:
+        return self._manager.filter(_parent=self)

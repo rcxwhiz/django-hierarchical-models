@@ -33,21 +33,52 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
 
     @abstractmethod
     def parent(self: T) -> T | None:
+        """The parent of the HierarchicalModel instance.
+
+        Can trigger a `refresh_from_db` for certain internal fields.
+
+        Returns:
+            Returns the instance of the parent, or None if there is no parent.
+        """
         pass
 
     @abstractmethod
     def is_child_of(self: T, parent: T) -> bool:
+        """Checks if the instance is at any level a child to the parent."""
         pass
 
     @abstractmethod
-    def direct_children(
-        self: T, transform: Callable[[QuerySet[T]], QuerySet[T]] | None = None
-    ) -> QuerySet[T]:
+    def direct_children(self: T) -> QuerySet[T]:
+        """Gets all the direct descendants of a model.
+
+        If there are no children the QuerySet will be emtpy.
+
+        In the course of finding all direct children, some models may have to
+        evaluate QuerySets, others might not.
+
+        Returns:
+            An unordered QuerySet of all direct children of this model.
+        """
         pass
 
     # ------------------------ public class methods ------------------------- #
+    # the following models are default implementations which might be
+    # overridden by different HierarchicalModel implementations
 
     def set_parent(self: T, parent: T | None):
+        """Assigns the given model as the parent.
+
+        Due to the trouble that cycles pose to these data structures, a check
+        is made if the parent is already a child to this model in any way.
+
+        Some models in which it is possible to represent a cycle have a
+        .set_parent_unchecked() method which will skip this step. That method
+        should be used with great care since it can be extremely difficult to
+        repair models that have cycles.
+
+        Raises:
+            CycleException: A cycle would be formed by this operation - skipped.
+        """
         if parent is not None and (parent == self or parent.is_child_of(self)):
             raise CycleException(parent, self)
         self._set_parent(parent)
@@ -55,6 +86,7 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
     def create_child(
         self: T, create_method: Callable[..., T] | None = None, **kwargs
     ) -> T:
+        """A convenience method for creating a child model."""
         if create_method is None:
             create_method = self._manager.create
         return create_method(parent=self, **kwargs)
@@ -109,7 +141,7 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
         max_generations: int | None,
         max_siblings: int | None,
         max_total: int | None,
-        sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
+        sibling_transform: Callable[[QuerySet[T]], QuerySet[T]],
     ):
         f = _dispatch_table[
             (
@@ -181,7 +213,10 @@ def _no_no_no(
     while queue:
         parent_node, node = queue.popleft()
         parent_node.children.append(node)
-        for child in node.instance.direct_children(sibling_transform):
+        children = node.instance.direct_children()
+        if sibling_transform is not None:
+            children = sibling_transform(children)
+        for child in children:
             child_node = HierarchicalModel.Node(child)
             queue.append((node, child_node))
 
@@ -198,7 +233,10 @@ def _yes_no_no(
         parent_node, node, generation = queue.popleft()
         parent_node.children.append(node)
         if generation < max_generations:
-            for child in node.instance.direct_children(sibling_transform):
+            children = node.instance.direct_children()
+            if sibling_transform is not None:
+                children = sibling_transform(children)
+            for child in children:
                 child_node = HierarchicalModel.Node(child)
                 queue.append((node, child_node, generation + 1))
 
@@ -214,7 +252,10 @@ def _no_yes_no(
     while queue:
         parent_node, node = queue.popleft()
         parent_node.children.append(node)
-        for child in node.instance.direct_children(sibling_transform)[:max_siblings]:
+        children = node.instance.direct_children()
+        if sibling_transform is not None:
+            children = sibling_transform(children)
+        for child in children[:max_siblings]:
             child_node = HierarchicalModel.Node(child)
             queue.append((node, child_node))
 
@@ -231,7 +272,10 @@ def _no_no_yes(
     while queue:
         parent_node, node = queue.popleft()
         parent_node.children.append(node)
-        for child in node.instance.direct_children(sibling_transform)[:max_total]:
+        children = node.instance.direct_children()
+        if sibling_transform is not None:
+            children = sibling_transform(children)
+        for child in children[:max_total]:
             child_node = HierarchicalModel.Node(child)
             queue.append((node, child_node))
             max_total -= 1
@@ -249,9 +293,10 @@ def _yes_yes_no(
         parent_node, node, generation = queue.popleft()
         parent_node.children.append(node)
         if generation < max_generations:
-            for child in node.instance.direct_children(sibling_transform)[
-                :max_siblings
-            ]:
+            children = node.instance.direct_children()
+            if sibling_transform is not None:
+                children = sibling_transform(children)
+            for child in children[:max_siblings]:
                 child_node = HierarchicalModel.Node(child)
                 queue.append((node, child_node, generation + 1))
 
@@ -269,7 +314,10 @@ def _yes_no_yes(
         parent_node, node, generation = queue.popleft()
         parent_node.children.append(node)
         if generation < max_generations:
-            for child in node.instance.direct_children(sibling_transform)[:max_total]:
+            children = node.instance.direct_children()
+            if sibling_transform is not None:
+                children = sibling_transform(children)
+            for child in children[:max_total]:
                 child_node = HierarchicalModel.Node(child)
                 queue.append((node, child_node, generation + 1))
                 max_total -= 1
@@ -288,7 +336,10 @@ def _no_yes_yes(
         parent_node, node = queue.popleft()
         parent_node.children.append(node)
         num_siblings = min(max_siblings, max_total)
-        for child in node.instance.direct_children(sibling_transform)[:num_siblings]:
+        children = node.instance.direct_children()
+        if sibling_transform is not None:
+            children = sibling_transform(children)
+        for child in children[:num_siblings]:
             child_node = HierarchicalModel.Node(child)
             queue.append((node, child_node))
             max_total -= 1
@@ -308,9 +359,10 @@ def _yes_yes_yes(
         parent_node.children.append(node)
         if generation < max_generations:
             num_siblings = min(max_siblings, max_total)
-            for child in node.instance.direct_children(sibling_transform)[
-                :num_siblings
-            ]:
+            children = node.instance.direct_children()
+            if sibling_transform is not None:
+                children = sibling_transform(children)
+            for child in children[:num_siblings]:
                 child_node = HierarchicalModel.Node(child)
                 queue.append((node, child_node, generation + 1))
                 max_total -= 1

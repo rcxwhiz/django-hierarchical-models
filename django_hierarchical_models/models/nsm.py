@@ -1,4 +1,3 @@
-from collections.abc import Callable
 from typing import override
 
 from django.db import models
@@ -213,9 +212,7 @@ class NestedSetModel(HierarchicalModel):
         self._shift_chunk(self_chunk, *self_shift)
 
     @override
-    def direct_children(
-        self: T, transform: Callable[[QuerySet[T]], QuerySet[T]] | None = None
-    ) -> QuerySet[T]:
+    def direct_children(self: T) -> QuerySet[T]:
         self.refresh_from_db(fields=("_left", "_right"))
         children_chunk = self._manager.filter(
             _left__gt=self._left, _right__lt=self._right
@@ -225,10 +222,7 @@ class NestedSetModel(HierarchicalModel):
             next_child = children_chunk.first()
             direct_children.append(next_child.pk)
             children_chunk = children_chunk.filter(_left__gt=next_child._right)
-        direct_children_queryset = self._manager.filter(pk__in=direct_children)
-        if transform is not None:
-            direct_children_queryset = transform(direct_children_queryset)
-        return direct_children_queryset
+        return self._manager.filter(pk__in=direct_children)
 
     @override
     def root(self: T) -> T:

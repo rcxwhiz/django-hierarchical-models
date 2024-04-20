@@ -1,6 +1,6 @@
 from collections.abc import Callable
+from typing import override
 
-# from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import F, Max, QuerySet
 
@@ -8,10 +8,14 @@ from django_hierarchical_models.models.hierarchical_model import HierarchicalMod
 
 
 class NestedSetModel(HierarchicalModel):
+    """Nested Set Model implementation of HierarchicalModel.
+
+    Class description here.
+
+    """
 
     _left = models.PositiveIntegerField()
     _right = models.PositiveIntegerField()
-    # _depth = models.IntegerField()
 
     def _shift_chunk(self: T, chunk: QuerySet[T], left_shift: int, right_shift: int):
         if left_shift != 0:
@@ -28,6 +32,15 @@ class NestedSetModel(HierarchicalModel):
         abstract = True
 
     def __init__(self, *args, **kwargs):
+        """Initialize new NestedSetModel.
+
+        If "parent" is present in the kwargs, it is used to initialize this instance
+        with that model as a parent.
+
+        Args:
+            args: Used internally by Django
+            kwargs: Looks for "parent"
+        """
         if len(args) == 0:
             if "parent" in kwargs:
                 parent = kwargs.pop("parent")
@@ -46,6 +59,7 @@ class NestedSetModel(HierarchicalModel):
                 kwargs["_right"] = right_most_value + 2
         super().__init__(*args, **kwargs)
 
+    @override
     def delete(self, using=None, keep_parents=False):
         skin_chunk = self._manager.filter(_left__lt=self._left, _right__gt=self._right)
         children_chunk = self._manager.filter(
@@ -59,6 +73,7 @@ class NestedSetModel(HierarchicalModel):
 
         super().delete(using=using, keep_parents=keep_parents)
 
+    @override
     def parent(self: T) -> T | None:
         self.refresh_from_db(fields=("_left", "_right"))
         return (
@@ -67,11 +82,13 @@ class NestedSetModel(HierarchicalModel):
             .first()
         )
 
+    @override
     def is_child_of(self: T, parent: T) -> bool:
         self.refresh_from_db(fields=("_left",))
         parent.refresh_from_db(fields=("_left", "_right"))
         return parent._left < self._left < parent._right
 
+    @override
     def _set_parent(self: T, parent: T | None):
         if parent == self.parent():
             # left and right were updated by the call to parent()
@@ -207,6 +224,7 @@ class NestedSetModel(HierarchicalModel):
         self_chunk = self._manager.filter(pk__in=self_chunk_items)
         self._shift_chunk(self_chunk, *self_shift)
 
+    @override
     def direct_children(
         self: T, transform: Callable[[QuerySet[T]], QuerySet[T]] | None = None
     ) -> QuerySet[T]:
@@ -224,6 +242,7 @@ class NestedSetModel(HierarchicalModel):
             direct_children_queryset = transform(direct_children_queryset)
         return direct_children_queryset
 
+    @override
     def root(self: T) -> T:
         self.refresh_from_db(fields=("_left", "_right"))
         parents_query = self._manager.filter(

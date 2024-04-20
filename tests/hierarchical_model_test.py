@@ -139,10 +139,18 @@ class HierarchicalModelInterfaceTest(TestCase):
         self.assertIsNone(parent.parent())
         self.assertEqual(child.parent(), parent)
 
+    def test_basic_delete(self):
+        parent = self.create(1)
+        child = self.create(2)
+        child.set_parent(parent)
+        self.assertIsNone(parent.parent())
+        self.assertEqual(child.parent(), parent)
+        parent.delete()
+        self.assertIsNone(child.parent())
+
     def test_basic_create_cycle(self):
         parent = self.create(1)
         child = parent.create_child(num=2)
-        _ = self.create(3)
         with self.assertRaises(CycleException) as cm:
             parent.set_parent(child)
         self.assertEqual(cm.exception.child, parent)

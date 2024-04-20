@@ -23,7 +23,14 @@ class AdjacencyListModel(HierarchicalModel):
     def parent(self: T) -> T | None:
         return self._parent
 
-    def set_parent(self: T, parent: T | None):
+    def is_child_of(self: T, parent: T):
+        if self._parent is None:
+            return False
+        if self._parent == parent:
+            return True
+        return self._parent.is_child_of(parent)
+
+    def _set_parent(self: T, parent: T | None):
         self._parent = parent
         self.save(update_fields=["_parent"])
 

@@ -67,7 +67,12 @@ class NestedSetModel(HierarchicalModel):
             .first()
         )
 
-    def set_parent(self: T, parent: T | None):
+    def is_child_of(self: T, parent: T):
+        self.refresh_from_db(fields=("_left",))
+        parent.refresh_from_db(fields=("_left", "_right"))
+        return parent._left < self._left < parent._right
+
+    def _set_parent(self: T, parent: T | None):
         if parent == self.parent():
             # left and right were updated by the call to parent()
             return

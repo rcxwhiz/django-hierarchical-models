@@ -11,6 +11,7 @@ from django.db.models import Manager, QuerySet
 
 from django_hierarchical_models.models.exceptions import (
     AlreadyHasParentException,
+    CycleException,
     NotAChildException,
 )
 
@@ -62,8 +63,17 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
         pass
 
     @abstractmethod
-    def set_parent(self: T, parent: T | None):
+    def _set_parent(self: T, parent: T | None):
         pass
+
+    @abstractmethod
+    def is_child_of(self: T, parent: T):
+        pass
+
+    def set_parent(self: T, parent: T | None):
+        if parent is not None and (parent == self or parent.is_child_of(self)):
+            raise CycleException(parent, self)
+        self._set_parent(parent)
 
     @abstractmethod
     def direct_children(
@@ -78,16 +88,6 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
             create_method = self._manager.create
         return create_method(parent=self, **kwargs)
 
-    def detect_cycle(self: T) -> bool:
-        parent = self.parent()
-        seen_models = set()
-        while parent is not None:
-            if parent in seen_models:
-                return True
-            seen_models.add(parent)
-            parent = parent.parent()
-        return False
-
     def add_child(self: T, child: T, check_has_parent: bool = False):
         if check_has_parent and child.parent() is not None:
             raise AlreadyHasParentException(child)
@@ -95,7 +95,7 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
 
     def remove_child(self: T, child: T, check_is_child: bool = False):
         if child.parent() == self:
-            child.set_parent(None)
+            child._set_parent(None)
         elif check_is_child:
             raise NotAChildException(self, child)
 

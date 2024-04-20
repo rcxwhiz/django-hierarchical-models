@@ -70,7 +70,7 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
         pass
 
     @abstractmethod
-    def is_child_of(self: T, parent: T):
+    def is_child_of(self: T, parent: T) -> bool:
         pass
 
     def set_parent(self: T, parent: T | None):

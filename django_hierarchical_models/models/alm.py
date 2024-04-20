@@ -24,7 +24,8 @@ class AdjacencyListModel(HierarchicalModel):
         self.refresh_from_db(fields=("_parent",))
         return self._parent
 
-    def is_child_of(self: T, parent: T):
+    def is_child_of(self: T, parent: T) -> bool:
+        self.refresh_from_db(fields=("_parent",))
         if self._parent is None:
             return False
         if self._parent == parent:

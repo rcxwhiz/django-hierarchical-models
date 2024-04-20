@@ -24,65 +24,33 @@ class HierarchicalModelABCMeta(ABCMeta, type(models.Model)):
 
 class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
 
+    # ------------------------ override models.Model ------------------------ #
+
     class Meta:
         abstract = True
 
-    class Node:
-        def __init__(
-            self, instance: T, children: list[HierarchicalModel.Node] | None = None
-        ):
-            self.instance = instance
-            self.children = children if children is not None else []
-
-        def __eq__(self, other):
-            if not isinstance(other, HierarchicalModel.Node):
-                return False
-            if self.instance != other.instance:
-                return False
-            if len(self.children) != len(other.children):
-                return False
-            return all(
-                self_child == other_child
-                for self_child, other_child in zip(self.children, other.children)
-            )
-
-        def __copy__(self):
-            return HierarchicalModel.Node(
-                self.instance, [copy.copy(child) for child in self.children]
-            )
-
-        def _p(self, s, indent=0, dash=False):
-            s[0] += f"\n{' ' * indent}{'- ' if dash else ''}{self.instance}"
-            for child in self.children:
-                child._p(s, indent + 2, True)
-
-        def __str__(self):
-            s = [""]
-            self._p(s)
-            return s[0]
+    # ------------------------ public abstract methods ---------------------- #
 
     @abstractmethod
     def parent(self: T) -> T | None:
         pass
 
     @abstractmethod
-    def _set_parent(self: T, parent: T | None):
-        pass
-
-    @abstractmethod
     def is_child_of(self: T, parent: T) -> bool:
         pass
-
-    def set_parent(self: T, parent: T | None):
-        if parent is not None and (parent == self or parent.is_child_of(self)):
-            raise CycleException(parent, self)
-        self._set_parent(parent)
 
     @abstractmethod
     def direct_children(
         self: T, transform: Callable[[QuerySet[T]], QuerySet[T]] | None = None
     ) -> QuerySet[T]:
         pass
+
+    # ------------------------ public class methods ------------------------- #
+
+    def set_parent(self: T, parent: T | None):
+        if parent is not None and (parent == self or parent.is_child_of(self)):
+            raise CycleException(parent, self)
+        self._set_parent(parent)
 
     def create_child(
         self: T, create_method: Callable[..., T] | None = None, **kwargs
@@ -133,6 +101,8 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
         )
         return root
 
+    # ------------------------ private class methods ------------------------ #
+
     def _child_finder(
         self,
         root: HierarchicalModel.Node,
@@ -153,6 +123,51 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
     @property
     def _manager(self: T) -> Manager[T]:
         return self.__class__._default_manager
+
+    # ------------------------ private abstract methods --------------------- #
+
+    @abstractmethod
+    def _set_parent(self: T, parent: T | None):
+        pass
+
+    # ------------------------ internal classes ----------------------------- #
+
+    class Node:
+        def __init__(
+            self, instance: T, children: list[HierarchicalModel.Node] | None = None
+        ):
+            self.instance = instance
+            self.children = children if children is not None else []
+
+        def __eq__(self, other):
+            if not isinstance(other, HierarchicalModel.Node):
+                return False
+            if self.instance != other.instance:
+                return False
+            if len(self.children) != len(other.children):
+                return False
+            return all(
+                self_child == other_child
+                for self_child, other_child in zip(self.children, other.children)
+            )
+
+        def __copy__(self):
+            return HierarchicalModel.Node(
+                self.instance, [copy.copy(child) for child in self.children]
+            )
+
+        def _p(self, s, indent=0, dash=False):
+            s[0] += f"\n{' ' * indent}{'- ' if dash else ''}{self.instance}"
+            for child in self.children:
+                child._p(s, indent + 2, True)
+
+        def __str__(self):
+            s = [""]
+            self._p(s)
+            return s[0]
+
+
+# ------------------------ dispatch functions ------------------------------- #
 
 
 def _no_no_no(

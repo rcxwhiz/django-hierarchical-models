@@ -86,23 +86,65 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
     def create_child(
         self: T, create_method: Callable[..., T] | None = None, **kwargs
     ) -> T:
-        """A convenience method for creating a child model."""
+        """A convenience method for creating a child model.
+
+        Adds parent=self to the creation of the instance. The instance will be
+        saved, unless a different create_method is passed.
+
+        Args:
+            create_method: Defaults to .objects.create()
+            kwargs: Regular kwargs for creating an instance of this model.
+
+        Returns:
+            New model instance.
+        """
         if create_method is None:
             create_method = self._manager.create
         return create_method(parent=self, **kwargs)
 
     def add_child(self: T, child: T, check_has_parent: bool = False):
+        """Adds child to the children of this instance.
+
+        Args:
+            child: The child to be added to this instance.
+            check_has_parent: If true, an exception is raised when the child
+            already has a parent.
+
+        Raises:
+            AlreadyHasParentException: child already has a parent.
+        """
         if check_has_parent and child.parent() is not None:
             raise AlreadyHasParentException(child)
         child.set_parent(self)
 
     def remove_child(self: T, child: T, check_is_child: bool = False):
+        """Removes the child from the instance's children.
+
+        Args:
+            child: A direct child to be removed (no grandchildren).
+            check_is_child: Throw an exception if the child is not a direct
+            child.
+
+        Raises:
+            NotAChildException: The given child is not a child of this instance.
+        """
         if child.parent() == self:
             child._set_parent(None)
         elif check_is_child:
             raise NotAChildException(self, child)
 
     def ancestors(self: T, max_level: int | None = None) -> list[T]:
+        """Returns an ordered list of the model's ancestors.
+
+        Args:
+             max_level: If a max level is given, the function will stop after
+             that many levels.
+
+        Returns:
+            An ordered list of the instance's ancestors, starting with the
+            closest on the left side of the list, and the root at the right.
+        """
+
         if self.parent() is None or (max_level is not None and max_level <= 0):
             return []
         if max_level is not None:
@@ -110,6 +152,11 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
         return [self.parent()] + self.parent().ancestors(max_level=max_level)
 
     def root(self: T) -> T:
+        """Gives the root of the node.
+
+        Returns:
+            Returns the first parent with no parent.
+        """
         if self.parent() is None:
             return self
         return self.parent().root()
@@ -121,6 +168,23 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
         max_total: int | None = None,
         sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None = None,
     ) -> HierarchicalModel.Node:
+        """A structured children representation.
+
+        This function performs a breadth first search of the children of the
+        given model instance. This search can be highly configured by the
+        parameters and transform.
+
+        Args:
+            max_generations: If provided, the maximum depth to search for
+            children.
+            max_siblings: If provided, the maximum number of children to evaluate
+            from each node.
+            max_total: If provided, the maximum nodes that will be evaluated.
+
+        Returns:
+            A Node structure, each containing an ordered list of the children
+            of that Node.
+        """
         root = HierarchicalModel.Node(self)
         if (
             (max_generations is not None and max_generations < 1)
@@ -143,6 +207,15 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
         max_total: int | None,
         sibling_transform: Callable[[QuerySet[T]], QuerySet[T]],
     ):
+        """Evaluates the children of the given node.
+
+        If a function were to be overridden for finding children, this would be
+        the one.
+
+        This version uses the optional parameters get a function from a
+        dispatch table. The functions in this dispatch table use a queue to do
+        a BFS on the given root node.
+        """
         f = _dispatch_table[
             (
                 max_generations is not None,
@@ -154,12 +227,20 @@ class HierarchicalModel(models.Model, metaclass=HierarchicalModelABCMeta):
 
     @property
     def _manager(self: T) -> Manager[T]:
+        """Convenience method to get the object manager at runtime."""
         return self.__class__._default_manager
 
     # ------------------------ private abstract methods --------------------- #
 
     @abstractmethod
     def _set_parent(self: T, parent: T | None):
+        """The actual mechanism of setting the parent.
+
+        No checks for cycles or anything happen in this function.
+
+        Args:
+            parent: The parent to be set to.
+        """
         pass
 
     # ------------------------ internal classes ----------------------------- #

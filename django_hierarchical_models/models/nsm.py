@@ -1,5 +1,3 @@
-from typing import override
-
 from django.db import models
 from django.db.models import F, Max, QuerySet
 
@@ -44,7 +42,6 @@ class NestedSetModel(HierarchicalModel):
     class Meta:
         abstract = True
 
-    @override
     def delete(self, using=None, keep_parents=False):
         skin_chunk = self._manager.filter(_left__lt=self._left, _right__gt=self._right)
         children_chunk = self._manager.filter(
@@ -60,7 +57,6 @@ class NestedSetModel(HierarchicalModel):
 
     # ------------------------ override HierarchicalModel ------------------- #
 
-    @override
     def parent(self: T) -> T | None:
         self.refresh_from_db(fields=("_left", "_right"))
         return (
@@ -69,13 +65,11 @@ class NestedSetModel(HierarchicalModel):
             .first()
         )
 
-    @override
     def is_child_of(self: T, parent: T) -> bool:
         self.refresh_from_db(fields=("_left",))
         parent.refresh_from_db(fields=("_left", "_right"))
         return parent._left < self._left < parent._right
 
-    @override
     def _set_parent(self: T, parent: T | None):
         if parent == self.parent():
             # left and right were updated by the call to parent()
@@ -211,7 +205,6 @@ class NestedSetModel(HierarchicalModel):
         self_chunk = self._manager.filter(pk__in=self_chunk_items)
         self._shift_chunk(self_chunk, *self_shift)
 
-    @override
     def direct_children(self: T) -> QuerySet[T]:
         self.refresh_from_db(fields=("_left", "_right"))
         children_chunk = self._manager.filter(
@@ -224,7 +217,6 @@ class NestedSetModel(HierarchicalModel):
             children_chunk = children_chunk.filter(_left__gt=next_child._right)
         return self._manager.filter(pk__in=direct_children)
 
-    @override
     def root(self: T) -> T:
         self.refresh_from_db(fields=("_left", "_right"))
         parents_query = self._manager.filter(

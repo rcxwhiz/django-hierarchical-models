@@ -1,5 +1,3 @@
-from typing import override
-
 from django.db import models
 from django.db.models import QuerySet
 
@@ -33,12 +31,10 @@ class AdjacencyListModel(HierarchicalModel):
 
     # ------------------------ override HierarchicalModel ------------------- #
 
-    @override
     def parent(self: T) -> T | None:
         self.refresh_from_db(fields=("_parent",))
         return self._parent
 
-    @override
     def is_child_of(self: T, parent: T) -> bool:
         self.refresh_from_db(fields=("_parent",))
         if self._parent is None:
@@ -47,11 +43,9 @@ class AdjacencyListModel(HierarchicalModel):
             return True
         return self._parent.is_child_of(parent)
 
-    @override
     def _set_parent(self: T, parent: T | None):
         self._parent = parent
         self.save(update_fields=["_parent"])
 
-    @override
     def direct_children(self: T) -> QuerySet[T]:
         return self._manager.filter(_parent=self)

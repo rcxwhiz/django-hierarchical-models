@@ -1019,5 +1019,3 @@ class HierarchicalModelInterfaceTest(TestCase):
         self.assertFalse(self.n1.is_child_of(self.n1))
         self.assertFalse(self.n16.is_child_of(self.n16))
         self.assertFalse(self.n32.is_child_of(self.n32))
-
-    # TODO test(s) involving deletes

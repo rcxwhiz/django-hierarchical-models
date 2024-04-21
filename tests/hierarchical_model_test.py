@@ -5,6 +5,7 @@ from django.test import TestCase
 
 from django_hierarchical_models.models.exceptions import (
     AlreadyHasParentException,
+    CycleException,
     NotAChildException,
 )
 from django_hierarchical_models.models.hierarchical_model import HierarchicalModel
@@ -18,7 +19,7 @@ class TestHierarchicalModel(TestModelMixin, HierarchicalModel):
 T = TypeVar("T", bound=TestHierarchicalModel)
 
 
-class HierarchicalModelTestCase(TestCase):
+class HierarchicalModelInterfaceTest(TestCase):
     model_class: T
 
     def create(self, num: int, **kwargs) -> T:
@@ -125,12 +126,8 @@ class HierarchicalModelTestCase(TestCase):
         n1 = self.create(1)
         n2 = n1.create_child(num=2)
         n3 = n1.create_child(num=3)
-        self.assertQuerySetEqual(
-            n1.direct_children(transform=lambda x: x.order_by("num")), [n2, n3]
-        )
-        self.assertQuerySetEqual(
-            n1.direct_children(transform=lambda x: x.order_by("-num")), [n3, n2]
-        )
+        self.assertQuerySetEqual(n1.direct_children().order_by("num"), [n2, n3])
+        self.assertQuerySetEqual(n1.direct_children().order_by("-num"), [n3, n2])
 
     def test_basic_create_child(self):
         parent = self.create(1)
@@ -138,17 +135,22 @@ class HierarchicalModelTestCase(TestCase):
         self.assertIsNone(parent.parent())
         self.assertEqual(child.parent(), parent)
 
-    def test_basic_detect_cycle(self):
+    def test_basic_delete(self):
         parent = self.create(1)
-        child = parent.create_child(num=1)
-        other = self.create(3)
-        self.assertFalse(child.detect_cycle())
-        self.assertFalse(parent.detect_cycle())
-        self.assertFalse(other.detect_cycle())
-        parent.set_parent(child)
-        self.assertTrue(child.detect_cycle())
-        self.assertTrue(parent.detect_cycle())
-        self.assertFalse(other.detect_cycle())
+        child = self.create(2)
+        child.set_parent(parent)
+        self.assertIsNone(parent.parent())
+        self.assertEqual(child.parent(), parent)
+        parent.delete()
+        self.assertIsNone(child.parent())
+
+    def test_basic_create_cycle(self):
+        parent = self.create(1)
+        child = parent.create_child(num=2)
+        with self.assertRaises(CycleException) as cm:
+            parent.set_parent(child)
+        self.assertEqual(cm.exception.child, parent)
+        self.assertEqual(cm.exception.parent, child)
 
     def test_basic_add_child(self):
         n1 = self.create(1)
@@ -309,19 +311,15 @@ class HierarchicalModelTestCase(TestCase):
 
     def test_advanced_child_transform(self):
         self.assertQuerySetEqual(
-            self.n1.direct_children(transform=lambda x: x.order_by("-num")),
+            self.n1.direct_children().order_by("-num"),
             [self.n4, self.n3, self.n2],
         )
         self.assertQuerySetEqual(
-            self.n2.direct_children(
-                transform=lambda x: x.filter(num__gt=5).order_by("num")
-            ),
+            self.n2.direct_children().filter(num__gt=5).order_by("num"),
             [self.n6, self.n7],
         )
         self.assertQuerySetEqual(
-            self.n20.direct_children(
-                transform=lambda x: x.filter(num__gt=21, num__lt=26)
-            ),
+            self.n20.direct_children().filter(num__gt=21, num__lt=26),
             [self.n22, self.n23, self.n24, self.n25],
             ordered=False,
         )
@@ -346,175 +344,167 @@ class HierarchicalModelTestCase(TestCase):
             ordered=False,
         )
 
-    def test_advanced_detect_cycle(self):
-        self.assertFalse(self.n1.detect_cycle())
-        self.assertFalse(self.n2.detect_cycle())
-        self.assertFalse(self.n3.detect_cycle())
-        self.assertFalse(self.n4.detect_cycle())
-        self.assertFalse(self.n5.detect_cycle())
-        self.assertFalse(self.n6.detect_cycle())
-        self.assertFalse(self.n7.detect_cycle())
-        self.assertFalse(self.n8.detect_cycle())
-        self.assertFalse(self.n9.detect_cycle())
-        self.assertFalse(self.n10.detect_cycle())
-        self.assertFalse(self.n11.detect_cycle())
-        self.assertFalse(self.n12.detect_cycle())
-        self.assertFalse(self.n13.detect_cycle())
-        self.assertFalse(self.n14.detect_cycle())
-        self.assertFalse(self.n15.detect_cycle())
-        self.assertFalse(self.n16.detect_cycle())
-        self.assertFalse(self.n17.detect_cycle())
-        self.assertFalse(self.n18.detect_cycle())
-        self.assertFalse(self.n19.detect_cycle())
-        self.assertFalse(self.n20.detect_cycle())
-        self.assertFalse(self.n21.detect_cycle())
-        self.assertFalse(self.n22.detect_cycle())
-        self.assertFalse(self.n23.detect_cycle())
-        self.assertFalse(self.n24.detect_cycle())
-        self.assertFalse(self.n25.detect_cycle())
-        self.assertFalse(self.n26.detect_cycle())
-        self.assertFalse(self.n27.detect_cycle())
-        self.assertFalse(self.n28.detect_cycle())
-        self.assertFalse(self.n29.detect_cycle())
-        self.assertFalse(self.n30.detect_cycle())
-        self.assertFalse(self.n31.detect_cycle())
-        self.assertFalse(self.n32.detect_cycle())
+    def test_advanced_delete(self):
+        self.n3.delete()
+        for node, parent in (
+            (self.n1, None),
+            (self.n2, self.n1),
+            (self.n4, self.n1),
+            (self.n5, self.n2),
+            (self.n6, self.n2),
+            (self.n7, self.n2),
+            (self.n8, None),
+            (self.n9, self.n6),
+            (self.n10, self.n8),
+            (self.n11, self.n10),
+            (self.n12, None),
+            (self.n13, self.n12),
+            (self.n14, self.n13),
+            (self.n15, None),
+            (self.n16, self.n15),
+            (self.n17, self.n15),
+            (self.n18, None),
+            (self.n19, None),
+            (self.n20, None),
+            (self.n21, self.n20),
+            (self.n22, self.n20),
+            (self.n23, self.n20),
+            (self.n24, self.n20),
+            (self.n25, self.n20),
+            (self.n26, self.n20),
+            (self.n27, self.n23),
+            (self.n28, self.n23),
+            (self.n29, self.n23),
+            (self.n30, self.n23),
+            (self.n31, self.n23),
+            (self.n32, self.n23),
+        ):
+            node.refresh_from_db()
+            print(node)
+            self.assertEqual(node.parent(), parent)
 
-        self.n1.set_parent(self.n10)
-        self.assertTrue(self.n1.detect_cycle())
-        self.assertTrue(self.n2.detect_cycle())
-        self.assertTrue(self.n3.detect_cycle())
-        self.assertTrue(self.n4.detect_cycle())
-        self.assertTrue(self.n5.detect_cycle())
-        self.assertTrue(self.n6.detect_cycle())
-        self.assertTrue(self.n7.detect_cycle())
-        self.assertTrue(self.n8.detect_cycle())
-        self.assertTrue(self.n9.detect_cycle())
-        self.assertTrue(self.n10.detect_cycle())
-        self.assertTrue(self.n11.detect_cycle())
-        self.assertFalse(self.n12.detect_cycle())
-        self.assertFalse(self.n13.detect_cycle())
-        self.assertFalse(self.n14.detect_cycle())
-        self.assertFalse(self.n15.detect_cycle())
-        self.assertFalse(self.n16.detect_cycle())
-        self.assertFalse(self.n17.detect_cycle())
-        self.assertFalse(self.n18.detect_cycle())
-        self.assertFalse(self.n19.detect_cycle())
-        self.assertFalse(self.n20.detect_cycle())
-        self.assertFalse(self.n21.detect_cycle())
-        self.assertFalse(self.n22.detect_cycle())
-        self.assertFalse(self.n23.detect_cycle())
-        self.assertFalse(self.n24.detect_cycle())
-        self.assertFalse(self.n25.detect_cycle())
-        self.assertFalse(self.n26.detect_cycle())
-        self.assertFalse(self.n27.detect_cycle())
-        self.assertFalse(self.n28.detect_cycle())
-        self.assertFalse(self.n29.detect_cycle())
-        self.assertFalse(self.n30.detect_cycle())
-        self.assertFalse(self.n31.detect_cycle())
-        self.assertFalse(self.n32.detect_cycle())
+        self.n13.delete()
+        for node, parent in (
+            (self.n1, None),
+            (self.n2, self.n1),
+            (self.n4, self.n1),
+            (self.n5, self.n2),
+            (self.n6, self.n2),
+            (self.n7, self.n2),
+            (self.n8, None),
+            (self.n9, self.n6),
+            (self.n10, self.n8),
+            (self.n11, self.n10),
+            (self.n12, None),
+            (self.n14, None),
+            (self.n15, None),
+            (self.n16, self.n15),
+            (self.n17, self.n15),
+            (self.n18, None),
+            (self.n19, None),
+            (self.n20, None),
+            (self.n21, self.n20),
+            (self.n22, self.n20),
+            (self.n23, self.n20),
+            (self.n24, self.n20),
+            (self.n25, self.n20),
+            (self.n26, self.n20),
+            (self.n27, self.n23),
+            (self.n28, self.n23),
+            (self.n29, self.n23),
+            (self.n30, self.n23),
+            (self.n31, self.n23),
+            (self.n32, self.n23),
+        ):
+            self.assertEqual(node.parent(), parent)
 
-        self.n11.set_parent(self.n16)
-        self.assertTrue(self.n1.detect_cycle())
-        self.assertTrue(self.n2.detect_cycle())
-        self.assertTrue(self.n3.detect_cycle())
-        self.assertTrue(self.n4.detect_cycle())
-        self.assertTrue(self.n5.detect_cycle())
-        self.assertTrue(self.n6.detect_cycle())
-        self.assertTrue(self.n7.detect_cycle())
-        self.assertTrue(self.n8.detect_cycle())
-        self.assertTrue(self.n9.detect_cycle())
-        self.assertTrue(self.n10.detect_cycle())
-        self.assertFalse(self.n11.detect_cycle())
-        self.assertFalse(self.n12.detect_cycle())
-        self.assertFalse(self.n13.detect_cycle())
-        self.assertFalse(self.n14.detect_cycle())
-        self.assertFalse(self.n15.detect_cycle())
-        self.assertFalse(self.n16.detect_cycle())
-        self.assertFalse(self.n17.detect_cycle())
-        self.assertFalse(self.n18.detect_cycle())
-        self.assertFalse(self.n19.detect_cycle())
-        self.assertFalse(self.n20.detect_cycle())
-        self.assertFalse(self.n21.detect_cycle())
-        self.assertFalse(self.n22.detect_cycle())
-        self.assertFalse(self.n23.detect_cycle())
-        self.assertFalse(self.n24.detect_cycle())
-        self.assertFalse(self.n25.detect_cycle())
-        self.assertFalse(self.n26.detect_cycle())
-        self.assertFalse(self.n27.detect_cycle())
-        self.assertFalse(self.n28.detect_cycle())
-        self.assertFalse(self.n29.detect_cycle())
-        self.assertFalse(self.n30.detect_cycle())
-        self.assertFalse(self.n31.detect_cycle())
-        self.assertFalse(self.n32.detect_cycle())
+        self.n20.delete()
+        for node, parent in (
+            (self.n1, None),
+            (self.n2, self.n1),
+            (self.n4, self.n1),
+            (self.n5, self.n2),
+            (self.n6, self.n2),
+            (self.n7, self.n2),
+            (self.n8, None),
+            (self.n9, self.n6),
+            (self.n10, self.n8),
+            (self.n11, self.n10),
+            (self.n12, None),
+            (self.n14, None),
+            (self.n15, None),
+            (self.n16, self.n15),
+            (self.n17, self.n15),
+            (self.n18, None),
+            (self.n19, None),
+            (self.n21, None),
+            (self.n22, None),
+            (self.n23, None),
+            (self.n24, None),
+            (self.n25, None),
+            (self.n26, None),
+            (self.n27, self.n23),
+            (self.n28, self.n23),
+            (self.n29, self.n23),
+            (self.n30, self.n23),
+            (self.n31, self.n23),
+            (self.n32, self.n23),
+        ):
+            self.assertEqual(node.parent(), parent)
 
-        self.n8.set_parent(self.n18)
-        self.assertFalse(self.n1.detect_cycle())
-        self.assertFalse(self.n2.detect_cycle())
-        self.assertFalse(self.n3.detect_cycle())
-        self.assertFalse(self.n4.detect_cycle())
-        self.assertFalse(self.n5.detect_cycle())
-        self.assertFalse(self.n6.detect_cycle())
-        self.assertFalse(self.n7.detect_cycle())
-        self.assertFalse(self.n8.detect_cycle())
-        self.assertFalse(self.n9.detect_cycle())
-        self.assertFalse(self.n10.detect_cycle())
-        self.assertFalse(self.n11.detect_cycle())
-        self.assertFalse(self.n12.detect_cycle())
-        self.assertFalse(self.n13.detect_cycle())
-        self.assertFalse(self.n14.detect_cycle())
-        self.assertFalse(self.n15.detect_cycle())
-        self.assertFalse(self.n16.detect_cycle())
-        self.assertFalse(self.n17.detect_cycle())
-        self.assertFalse(self.n18.detect_cycle())
-        self.assertFalse(self.n19.detect_cycle())
-        self.assertFalse(self.n20.detect_cycle())
-        self.assertFalse(self.n21.detect_cycle())
-        self.assertFalse(self.n22.detect_cycle())
-        self.assertFalse(self.n23.detect_cycle())
-        self.assertFalse(self.n24.detect_cycle())
-        self.assertFalse(self.n25.detect_cycle())
-        self.assertFalse(self.n26.detect_cycle())
-        self.assertFalse(self.n27.detect_cycle())
-        self.assertFalse(self.n28.detect_cycle())
-        self.assertFalse(self.n29.detect_cycle())
-        self.assertFalse(self.n30.detect_cycle())
-        self.assertFalse(self.n31.detect_cycle())
-        self.assertFalse(self.n32.detect_cycle())
+        self.n6.delete()
+        for node, parent in (
+            (self.n1, None),
+            (self.n2, self.n1),
+            (self.n4, self.n1),
+            (self.n5, self.n2),
+            (self.n7, self.n2),
+            (self.n8, None),
+            (self.n9, None),
+            (self.n10, self.n8),
+            (self.n11, self.n10),
+            (self.n12, None),
+            (self.n14, None),
+            (self.n15, None),
+            (self.n16, self.n15),
+            (self.n17, self.n15),
+            (self.n18, None),
+            (self.n19, None),
+            (self.n21, None),
+            (self.n22, None),
+            (self.n23, None),
+            (self.n24, None),
+            (self.n25, None),
+            (self.n26, None),
+            (self.n27, self.n23),
+            (self.n28, self.n23),
+            (self.n29, self.n23),
+            (self.n30, self.n23),
+            (self.n31, self.n23),
+            (self.n32, self.n23),
+        ):
+            self.assertEqual(node.parent(), parent)
 
-        self.n20.set_parent(self.n21)
-        self.assertFalse(self.n1.detect_cycle())
-        self.assertFalse(self.n2.detect_cycle())
-        self.assertFalse(self.n3.detect_cycle())
-        self.assertFalse(self.n4.detect_cycle())
-        self.assertFalse(self.n5.detect_cycle())
-        self.assertFalse(self.n6.detect_cycle())
-        self.assertFalse(self.n7.detect_cycle())
-        self.assertFalse(self.n8.detect_cycle())
-        self.assertFalse(self.n9.detect_cycle())
-        self.assertFalse(self.n10.detect_cycle())
-        self.assertFalse(self.n11.detect_cycle())
-        self.assertFalse(self.n12.detect_cycle())
-        self.assertFalse(self.n13.detect_cycle())
-        self.assertFalse(self.n14.detect_cycle())
-        self.assertFalse(self.n15.detect_cycle())
-        self.assertFalse(self.n16.detect_cycle())
-        self.assertFalse(self.n17.detect_cycle())
-        self.assertFalse(self.n18.detect_cycle())
-        self.assertFalse(self.n19.detect_cycle())
-        self.assertTrue(self.n20.detect_cycle())
-        self.assertTrue(self.n21.detect_cycle())
-        self.assertTrue(self.n22.detect_cycle())
-        self.assertTrue(self.n23.detect_cycle())
-        self.assertTrue(self.n24.detect_cycle())
-        self.assertTrue(self.n25.detect_cycle())
-        self.assertTrue(self.n26.detect_cycle())
-        self.assertTrue(self.n27.detect_cycle())
-        self.assertTrue(self.n28.detect_cycle())
-        self.assertTrue(self.n29.detect_cycle())
-        self.assertTrue(self.n30.detect_cycle())
-        self.assertTrue(self.n31.detect_cycle())
-        self.assertTrue(self.n32.detect_cycle())
+    def test_advanced_create_cycle(self):
+        with self.assertRaises(CycleException) as cm:
+            self.n1.set_parent(self.n10)
+        self.assertEqual(cm.exception.child, self.n1)
+        self.assertEqual(cm.exception.parent, self.n10)
+
+        with self.assertRaises(CycleException) as cm:
+            self.n12.set_parent(self.n14)
+        self.assertEqual(cm.exception.child, self.n12)
+        self.assertEqual(cm.exception.parent, self.n14)
+
+        with self.assertRaises(CycleException) as cm:
+            self.n18.set_parent(self.n18)
+        self.assertEqual(cm.exception.child, self.n18)
+        self.assertEqual(cm.exception.parent, self.n18)
+
+        with self.assertRaises(CycleException) as cm:
+            self.n20.set_parent(self.n21)
+        self.assertEqual(cm.exception.child, self.n20)
+        self.assertEqual(cm.exception.parent, self.n21)
 
     def test_advanced_add_child(self):
         self.n1.add_child(self.n18)
@@ -1004,3 +994,28 @@ class HierarchicalModelTestCase(TestCase):
             ),
             mn15,
         )
+
+    def test_advanced_is_child(self):
+        self.assertTrue(self.n9.is_child_of(self.n1))
+        self.assertTrue(self.n9.is_child_of(self.n2))
+        self.assertTrue(self.n9.is_child_of(self.n6))
+        self.assertFalse(self.n9.is_child_of(self.n3))
+        self.assertFalse(self.n9.is_child_of(self.n5))
+
+        self.assertTrue(self.n14.is_child_of(self.n13))
+        self.assertTrue(self.n14.is_child_of(self.n12))
+        self.assertTrue(self.n13.is_child_of(self.n12))
+        self.assertFalse(self.n13.is_child_of(self.n14))
+        self.assertFalse(self.n12.is_child_of(self.n14))
+        self.assertFalse(self.n12.is_child_of(self.n13))
+
+        self.assertTrue(self.n26.is_child_of(self.n20))
+        self.assertFalse(self.n20.is_child_of(self.n26))
+        self.assertTrue(self.n30.is_child_of(self.n23))
+        self.assertTrue(self.n30.is_child_of(self.n20))
+        self.assertFalse(self.n30.is_child_of(self.n24))
+        self.assertFalse(self.n30.is_child_of(self.n31))
+
+        self.assertFalse(self.n1.is_child_of(self.n1))
+        self.assertFalse(self.n16.is_child_of(self.n16))
+        self.assertFalse(self.n32.is_child_of(self.n32))

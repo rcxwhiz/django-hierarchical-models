@@ -1,6 +1,6 @@
 from django.db import models
 
-from django_hierarchical_models.models import AdjacencyListModel
+from django_hierarchical_models.models import AdjacencyListModel, NestedSetModel
 
 
 class TestModelMixin(models.Model):
@@ -15,3 +15,8 @@ class TestModelMixin(models.Model):
 
 class ALMTestModel(TestModelMixin, AdjacencyListModel):
     pass
+
+
+class NSMTestModel(TestModelMixin, NestedSetModel):
+    def __str__(self):
+        return f"({self.num}|{self._left}|{self._right})"

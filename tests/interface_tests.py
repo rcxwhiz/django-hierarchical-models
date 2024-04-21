@@ -1,5 +1,5 @@
 from tests.hierarchical_model_test import HierarchicalModelInterfaceTest
-from tests.models import ALMTestModel, NSMTestModel
+from tests.models import ALMTestModel, NSMTestModel, PETestModel
 
 
 class ALMInterfaceTest(HierarchicalModelInterfaceTest):
@@ -8,3 +8,7 @@ class ALMInterfaceTest(HierarchicalModelInterfaceTest):
 
 class NSMInterfaceTest(HierarchicalModelInterfaceTest):
     model_class = NSMTestModel
+
+
+class PEInterfaceTest(HierarchicalModelInterfaceTest):
+    model_class = PETestModel

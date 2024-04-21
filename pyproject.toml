@@ -33,6 +33,7 @@ pythonpath = "."
 addopts = [
     "tests/interface_tests.py::ALMInterfaceTest",
     "tests/interface_tests.py::NSMInterfaceTest",
+    "tests/interface_tests.py::PEInterfaceTest",
     "tests/alm_tests.py::ALMTests",
     "tests/nsm_tests.py::NSMTests"
 ]

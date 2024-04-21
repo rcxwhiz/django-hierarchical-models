@@ -10,7 +10,7 @@ packages = [{include = "django_hierarchical_models"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-django = "^5.0.4"
+django = "^4.2 || ^5.0"
 
 
 [tool.poetry.group.dev.dependencies]

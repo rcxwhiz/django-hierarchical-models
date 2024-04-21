@@ -54,15 +54,36 @@ class NestedSetModel(HierarchicalModel):
 
     def delete(self, using=None, keep_parents=False):
         """Necessary to "free up" space."""
-        skin_chunk = self._manager.filter(_left__lt=self._left, _right__gt=self._right)
-        children_chunk = self._manager.filter(
-            _left__gt=self._left, _right__lt=self._right
+        root = self.root()
+        dist_to_root = root._right - self._left
+        children_space = self._right - self._left - 1
+
+        parents_chunk = self._manager.filter(
+            _left__lt=self._left, _right__gt=self._right
+        )
+        num_parents = len(parents_chunk)
+
+        siblings_chunk = self._manager.filter(
+            _left__gt=self._right, _right__lt=root._right
         )
         to_right_chunk = self._manager.filter(_left__gt=self._right)
+        children = (
+            child.pk
+            for child in self._manager.filter(
+                _left__gt=self._left, _right__lt=self._right
+            )
+        )
 
-        self._shift_chunk(skin_chunk, 0, -2)
-        self._shift_chunk(children_chunk, -1, -1)
+        self._shift_chunk(siblings_chunk, -2 - children_space, -2 - children_space)
+        self._shift_chunk(parents_chunk, 0, -2 - children_space)
         self._shift_chunk(to_right_chunk, -2, -2)
+
+        children_chunk = self._manager.filter(pk__in=children)
+        self._shift_chunk(
+            children_chunk,
+            dist_to_root - num_parents - 1 - children_space,
+            dist_to_root - num_parents - 1 - children_space,
+        )
 
         super().delete(using=using, keep_parents=keep_parents)
 

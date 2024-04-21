@@ -344,6 +344,147 @@ class HierarchicalModelInterfaceTest(TestCase):
             ordered=False,
         )
 
+    def test_advanced_delete(self):
+        self.n3.delete()
+        for node, parent in (
+            (self.n1, None),
+            (self.n2, self.n1),
+            (self.n4, self.n1),
+            (self.n5, self.n2),
+            (self.n6, self.n2),
+            (self.n7, self.n2),
+            (self.n8, None),
+            (self.n9, self.n6),
+            (self.n10, self.n8),
+            (self.n11, self.n10),
+            (self.n12, None),
+            (self.n13, self.n12),
+            (self.n14, self.n13),
+            (self.n15, None),
+            (self.n16, self.n15),
+            (self.n17, self.n15),
+            (self.n18, None),
+            (self.n19, None),
+            (self.n20, None),
+            (self.n21, self.n20),
+            (self.n22, self.n20),
+            (self.n23, self.n20),
+            (self.n24, self.n20),
+            (self.n25, self.n20),
+            (self.n26, self.n20),
+            (self.n27, self.n23),
+            (self.n28, self.n23),
+            (self.n29, self.n23),
+            (self.n30, self.n23),
+            (self.n31, self.n23),
+            (self.n32, self.n23),
+        ):
+            node.refresh_from_db()
+            print(node)
+            self.assertEqual(node.parent(), parent)
+
+        self.n13.delete()
+        for node, parent in (
+            (self.n1, None),
+            (self.n2, self.n1),
+            (self.n4, self.n1),
+            (self.n5, self.n2),
+            (self.n6, self.n2),
+            (self.n7, self.n2),
+            (self.n8, None),
+            (self.n9, self.n6),
+            (self.n10, self.n8),
+            (self.n11, self.n10),
+            (self.n12, None),
+            (self.n14, None),
+            (self.n15, None),
+            (self.n16, self.n15),
+            (self.n17, self.n15),
+            (self.n18, None),
+            (self.n19, None),
+            (self.n20, None),
+            (self.n21, self.n20),
+            (self.n22, self.n20),
+            (self.n23, self.n20),
+            (self.n24, self.n20),
+            (self.n25, self.n20),
+            (self.n26, self.n20),
+            (self.n27, self.n23),
+            (self.n28, self.n23),
+            (self.n29, self.n23),
+            (self.n30, self.n23),
+            (self.n31, self.n23),
+            (self.n32, self.n23),
+        ):
+            self.assertEqual(node.parent(), parent)
+
+        self.n20.delete()
+        for node, parent in (
+            (self.n1, None),
+            (self.n2, self.n1),
+            (self.n4, self.n1),
+            (self.n5, self.n2),
+            (self.n6, self.n2),
+            (self.n7, self.n2),
+            (self.n8, None),
+            (self.n9, self.n6),
+            (self.n10, self.n8),
+            (self.n11, self.n10),
+            (self.n12, None),
+            (self.n14, None),
+            (self.n15, None),
+            (self.n16, self.n15),
+            (self.n17, self.n15),
+            (self.n18, None),
+            (self.n19, None),
+            (self.n21, None),
+            (self.n22, None),
+            (self.n23, None),
+            (self.n24, None),
+            (self.n25, None),
+            (self.n26, None),
+            (self.n27, self.n23),
+            (self.n28, self.n23),
+            (self.n29, self.n23),
+            (self.n30, self.n23),
+            (self.n31, self.n23),
+            (self.n32, self.n23),
+        ):
+            self.assertEqual(node.parent(), parent)
+
+        self.n6.delete()
+        for node, parent in (
+            (self.n1, None),
+            (self.n2, self.n1),
+            (self.n4, self.n1),
+            (self.n5, self.n2),
+            (self.n7, self.n2),
+            (self.n8, None),
+            (self.n9, None),
+            (self.n10, self.n8),
+            (self.n11, self.n10),
+            (self.n12, None),
+            (self.n14, None),
+            (self.n15, None),
+            (self.n16, self.n15),
+            (self.n17, self.n15),
+            (self.n18, None),
+            (self.n19, None),
+            (self.n21, None),
+            (self.n22, None),
+            (self.n23, None),
+            (self.n24, None),
+            (self.n25, None),
+            (self.n26, None),
+            (self.n27, self.n23),
+            (self.n28, self.n23),
+            (self.n29, self.n23),
+            (self.n30, self.n23),
+            (self.n31, self.n23),
+            (self.n32, self.n23),
+        ):
+            self.assertEqual(node.parent(), parent)
+
     def test_advanced_create_cycle(self):
         with self.assertRaises(CycleException) as cm:
             self.n1.set_parent(self.n10)

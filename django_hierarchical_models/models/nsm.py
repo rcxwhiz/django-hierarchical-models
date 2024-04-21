@@ -287,6 +287,7 @@ class NestedSetModel(HierarchicalModel):
     # ------------------------ public class methods ------------------------- #
 
     def num_children(self) -> int:
+        self.refresh_from_db(fields=("_left", "_right"))
         return (self._right - self._left) // 2
 
     # ------------------------ private class methods ------------------------ #

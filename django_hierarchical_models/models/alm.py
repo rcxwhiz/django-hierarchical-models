@@ -47,5 +47,9 @@ class AdjacencyListModel(HierarchicalModel):
         self._parent = parent
         self.save(update_fields=["_parent"])
 
+    def set_parent_unchecked(self: T, parent: T | None):
+        """Sets the parent of this instance without checking for cycles."""
+        self._set_parent(parent)
+
     def direct_children(self: T) -> QuerySet[T]:
         return self._manager.filter(_parent=self)

@@ -336,3 +336,46 @@ class NSMTests(TestCase):
         ):
             chunk[0].refresh_from_db()
             self.assert_chunk(*chunk)
+
+    def test_num_children(self):
+        n1 = NSMTestModel.objects.create(num=1)
+        n2 = NSMTestModel.objects.create(num=2)
+        n3 = NSMTestModel.objects.create(num=3)
+        n4 = NSMTestModel.objects.create(num=4)
+        n5 = NSMTestModel.objects.create(num=5)
+        n6 = NSMTestModel.objects.create(num=6)
+        n7 = NSMTestModel.objects.create(num=7)
+        for node, num_children in zip(
+            (n1, n2, n3, n4, n5, n6, n7), (0, 0, 0, 0, 0, 0, 0)
+        ):
+            self.assertEqual(node.num_children(), num_children)
+        n7.set_parent(n2)
+        for node, num_children in zip(
+            (n1, n2, n3, n4, n5, n6, n7), (0, 1, 0, 0, 0, 0, 0)
+        ):
+            self.assertEqual(node.num_children(), num_children)
+        n4.set_parent(n5)
+        for node, num_children in zip(
+            (n1, n2, n3, n4, n5, n6, n7), (0, 1, 0, 0, 1, 0, 0)
+        ):
+            self.assertEqual(node.num_children(), num_children)
+        n1.set_parent(n5)
+        for node, num_children in zip(
+            (n1, n2, n3, n4, n5, n6, n7), (0, 1, 0, 0, 2, 0, 0)
+        ):
+            self.assertEqual(node.num_children(), num_children)
+        n5.set_parent(n2)
+        for node, num_children in zip(
+            (n1, n2, n3, n4, n5, n6, n7), (0, 4, 0, 0, 2, 0, 0)
+        ):
+            self.assertEqual(node.num_children(), num_children)
+        n3.set_parent(n1)
+        for node, num_children in zip(
+            (n1, n2, n3, n4, n5, n6, n7), (1, 5, 0, 0, 3, 0, 0)
+        ):
+            self.assertEqual(node.num_children(), num_children)
+        n2.set_parent(n6)
+        for node, num_children in zip(
+            (n1, n2, n3, n4, n5, n6, n7), (1, 5, 0, 0, 3, 6, 0)
+        ):
+            self.assertEqual(node.num_children(), num_children)

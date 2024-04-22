@@ -21,6 +21,9 @@ pytest = "^8.1.1"
 pytest-django = "^4.8.0"
 isort = "^5.13.2"
 psycopg2-binary = "^2.9.9"
+mypy = "^1.9.0"
+django-stubs = "^4.2.7"
+parameterized = "^0.9.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -33,3 +36,9 @@ pythonpath = "."
 
 [tool.isort]
 profile = "black"
+
+[tool.mypy]
+plugins = ["mypy_django_plugin.main"]
+
+[tool.django-stubs]
+django_settings_module = "tests.settings"

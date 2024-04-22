@@ -7,7 +7,13 @@ INSTALLED_APPS = (
     "tests",
 )
 
-if os.environ.get("POSTGRES_DB"):
+if "SQLITE" in os.environ:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+        },
+    }
+else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
@@ -16,12 +22,6 @@ if os.environ.get("POSTGRES_DB"):
             "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "postgres"),
             "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
             "PORT": os.environ.get("POSTGRES_PORT", "5432"),
-        },
-    }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
         },
     }
 

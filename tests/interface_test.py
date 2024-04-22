@@ -43,7 +43,7 @@ class HierarchicalModelInterfaceTester(TestCase):
         # convenience method to save num= in create calls
         return self.model_class.objects.create(num=num, **kwargs)
 
-    def setup_nodes(self):
+    def setup_advanced_nodes(self):
         self.n1 = self.create(1)
         self.n2 = self.create(2)
         self.n3 = self.create(3)
@@ -224,7 +224,7 @@ class HierarchicalModelInterfaceTester(TestCase):
         )
 
     def test_advanced_parent(self):
-        self.setup_nodes()
+        self.setup_advanced_nodes()
 
         self.assertIsNone(self.n1.parent())
         self.assertEqual(self.n2.parent(), self.n1)
@@ -260,7 +260,7 @@ class HierarchicalModelInterfaceTester(TestCase):
         self.assertEqual(self.n32.parent(), self.n23)
 
     def test_advanced_set_parent(self):
-        self.setup_nodes()
+        self.setup_advanced_nodes()
 
         self.n2.set_parent(None)
         self.assertIsNone(self.n2.parent())
@@ -284,7 +284,7 @@ class HierarchicalModelInterfaceTester(TestCase):
         self.assertEqual(self.n26.parent(), self.n20)
 
     def test_advanced_direct_children(self):
-        self.setup_nodes()
+        self.setup_advanced_nodes()
 
         self.assertQuerySetEqual(
             self.n1.direct_children(), [self.n2, self.n3, self.n4], ordered=False
@@ -334,7 +334,7 @@ class HierarchicalModelInterfaceTester(TestCase):
         self.assertQuerySetEqual(self.n32.direct_children(), [])
 
     def test_advanced_child_transform(self):
-        self.setup_nodes()
+        self.setup_advanced_nodes()
 
         self.assertQuerySetEqual(
             self.n1.direct_children().order_by("-num"),
@@ -351,7 +351,7 @@ class HierarchicalModelInterfaceTester(TestCase):
         )
 
     def test_advanced_create_child(self):
-        self.setup_nodes()
+        self.setup_advanced_nodes()
 
         n33 = self.n1.create_child(num=33)
         self.assertEqual(n33.parent(), self.n1)
@@ -373,7 +373,7 @@ class HierarchicalModelInterfaceTester(TestCase):
         )
 
     def test_advanced_delete(self):
-        self.setup_nodes()
+        self.setup_advanced_nodes()
 
         self.n3.delete()
         for node, parent in (
@@ -516,7 +516,7 @@ class HierarchicalModelInterfaceTester(TestCase):
             self.assertEqual(node.parent(), parent)
 
     def test_advanced_create_cycle(self):
-        self.setup_nodes()
+        self.setup_advanced_nodes()
 
         with self.assertRaises(CycleException) as cm:
             self.n1.set_parent(self.n10)
@@ -539,7 +539,7 @@ class HierarchicalModelInterfaceTester(TestCase):
         self.assertEqual(cm.exception.parent, self.n21)
 
     def test_advanced_add_child(self):
-        self.setup_nodes()
+        self.setup_advanced_nodes()
 
         self.n1.add_child(self.n18)
         self.assertEqual(self.n18.parent(), self.n1)
@@ -573,7 +573,7 @@ class HierarchicalModelInterfaceTester(TestCase):
         )
 
     def test_advanced_remove_child(self):
-        self.setup_nodes()
+        self.setup_advanced_nodes()
 
         self.n1.remove_child(self.n3)
         self.assertIsNone(self.n3.parent())
@@ -614,7 +614,7 @@ class HierarchicalModelInterfaceTester(TestCase):
         self.assertQuerySetEqual(self.n10.direct_children(), [self.n11])
 
     def test_advanced_ancestors(self):
-        self.setup_nodes()
+        self.setup_advanced_nodes()
 
         self.assertListEqual(self.n1.ancestors(), [])
         self.assertListEqual(self.n2.ancestors(), [self.n1])
@@ -652,7 +652,7 @@ class HierarchicalModelInterfaceTester(TestCase):
         self.assertListEqual(self.n32.ancestors(), [self.n23, self.n20])
 
     def test_advanced_ancestors_options(self):
-        self.setup_nodes()
+        self.setup_advanced_nodes()
 
         self.assertListEqual(self.n11.ancestors(max_level=0), [])
         self.assertListEqual(self.n11.ancestors(max_level=1), [self.n10])
@@ -668,7 +668,7 @@ class HierarchicalModelInterfaceTester(TestCase):
         )
 
     def test_advanced_root(self):
-        self.setup_nodes()
+        self.setup_advanced_nodes()
 
         self.assertEqual(self.n1.root(), self.n1)
         self.assertEqual(self.n2.root(), self.n1)
@@ -704,7 +704,7 @@ class HierarchicalModelInterfaceTester(TestCase):
         self.assertEqual(self.n32.root(), self.n20)
 
     def test_advanced_children(self):
-        self.setup_nodes()
+        self.setup_advanced_nodes()
 
         mn1 = Node[self.model_class](self.n1)
         mn2 = Node[self.model_class](self.n2)
@@ -852,7 +852,7 @@ class HierarchicalModelInterfaceTester(TestCase):
         )
 
     def test_advanced_children_options(self):
-        self.setup_nodes()
+        self.setup_advanced_nodes()
 
         mn1 = Node[self.model_class](self.n1)
         mn2 = Node[self.model_class](self.n2)
@@ -1042,7 +1042,7 @@ class HierarchicalModelInterfaceTester(TestCase):
         )
 
     def test_advanced_is_child(self):
-        self.setup_nodes()
+        self.setup_advanced_nodes()
 
         self.assertTrue(self.n9.is_child_of(self.n1))
         self.assertTrue(self.n9.is_child_of(self.n2))

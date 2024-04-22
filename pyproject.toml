@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "django-hierarchical-models"
-version = "0.1.0"
+version = "1.0.2"
 description = "Adds hierarchical models to Django"
 authors = ["Josh Bedwell <rcxwhiz@gmail.com>"]
 license = "MIT"

@@ -151,11 +151,12 @@ class HierarchicalModelInterface(models.Model, metaclass=HierarchicalModelABCMet
             closest on the left side of the list, and the root at the right.
         """
 
-        if self.parent() is None or (max_level is not None and max_level <= 0):
+        parent = self.parent()
+        if parent is None or (max_level is not None and max_level <= 0):
             return []
         if max_level is not None:
             max_level -= 1
-        return [self.parent()] + self.parent().ancestors(max_level=max_level)
+        return [parent] + parent.ancestors(max_level=max_level)
 
     def root(self: T) -> T:
         """Gives the root of the node.
@@ -163,9 +164,10 @@ class HierarchicalModelInterface(models.Model, metaclass=HierarchicalModelABCMet
         Returns:
             Returns the first parent with no parent.
         """
-        if self.parent() is None:
+        parent = self.parent()
+        if parent is None:
             return self
-        return self.parent().root()
+        return parent.root()
 
     def children(
         self: T,
@@ -211,7 +213,7 @@ class HierarchicalModelInterface(models.Model, metaclass=HierarchicalModelABCMet
         max_generations: int | None,
         max_siblings: int | None,
         max_total: int | None,
-        sibling_transform: Callable[[QuerySet[T]], QuerySet[T]],
+        sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
     ):
         """Evaluates the children of the given node.
 

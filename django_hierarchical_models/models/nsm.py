@@ -1,7 +1,11 @@
+from typing import TypeVar
+
 from django.db import models
 from django.db.models import F, Max, QuerySet
 
-from django_hierarchical_models.models.interface import HierarchicalModelInterface, T
+from django_hierarchical_models.models.interface import HierarchicalModelInterface
+
+T = TypeVar("T", bound="NestedSetModel")
 
 
 class NestedSetModel(HierarchicalModelInterface):
@@ -290,10 +294,11 @@ class NestedSetModel(HierarchicalModelInterface):
             _left__gt=self._left, _right__lt=self._right
         ).order_by("_left")
         direct_children = []
-        while children_chunk.exists():
-            next_child = children_chunk.first()
+        next_child = children_chunk.first()
+        while next_child is not None:
             direct_children.append(next_child.pk)
             children_chunk = children_chunk.filter(_left__gt=next_child._right)
+            next_child = children_chunk.first()
         return self._manager.filter(pk__in=direct_children)
 
     def root(self: T) -> T:

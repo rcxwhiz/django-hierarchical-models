@@ -1,7 +1,11 @@
+from typing import TypeVar
+
 from django.db import models
 from django.db.models import QuerySet
 
-from django_hierarchical_models.models.interface import HierarchicalModelInterface, T
+from django_hierarchical_models.models.interface import HierarchicalModelInterface
+
+T = TypeVar("T", bound="AdjacencyListModel")
 
 
 class AdjacencyListModel(HierarchicalModelInterface):

@@ -1,25 +1,23 @@
 import copy
 from typing import TypeVar
 
-from django.test import TestCase
-
 from django_hierarchical_models.models.exceptions import (
     AlreadyHasParentException,
     CycleException,
     NotAChildException,
 )
 from django_hierarchical_models.models.hierarchical_model import HierarchicalModel
-from tests.models import TestModelMixin
+from tests.models import NumberModelMixin
 
 
-class TestHierarchicalModel(TestModelMixin, HierarchicalModel):
+class HierarchicalTestModel(NumberModelMixin, HierarchicalModel):
     pass
 
 
-T = TypeVar("T", bound=TestHierarchicalModel)
+T = TypeVar("T", bound=HierarchicalTestModel)
 
 
-class HierarchicalModelInterfaceTest(TestCase):
+class HierarchicalModelInterfaceTester:
     model_class: T
 
     def create(self, num: int, **kwargs) -> T:

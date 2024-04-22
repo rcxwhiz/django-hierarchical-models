@@ -1,9 +1,13 @@
 from django.db import models
 
-from django_hierarchical_models.models import AdjacencyListModel, NestedSetModel
+from django_hierarchical_models.models import (
+    AdjacencyListModel,
+    NestedSetModel,
+    PathEnumerationModel,
+)
 
 
-class TestModelMixin(models.Model):
+class NumberModelMixin(models.Model):
     num = models.IntegerField()
 
     class Meta:
@@ -13,10 +17,14 @@ class TestModelMixin(models.Model):
         return str(self.num)
 
 
-class ALMTestModel(TestModelMixin, AdjacencyListModel):
+class ALMTestModel(NumberModelMixin, AdjacencyListModel):
     pass
 
 
-class NSMTestModel(TestModelMixin, NestedSetModel):
+class NSMTestModel(NumberModelMixin, NestedSetModel):
     def __str__(self):
         return f"({self.num}|{self._left}|{self._right})"
+
+
+class PEMTestModel(NumberModelMixin, PathEnumerationModel):
+    pass

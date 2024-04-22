@@ -37,7 +37,7 @@ class AdjacencyListModel(HierarchicalModelInterface):
 
     def parent(self: T) -> T | None:
         self.refresh_from_db(fields=("_parent",))
-        return self._parent
+        return self._parent  # type: ignore
 
     def is_child_of(self: T, parent: T) -> bool:
         self.refresh_from_db(fields=("_parent",))

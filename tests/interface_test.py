@@ -2,8 +2,9 @@ import copy
 import os
 
 from django.conf import settings
+from django.db.models.manager import BaseManager
 from django.test import TestCase
-from parameterized import parameterized_class
+from parameterized import parameterized_class  # type: ignore
 
 from django_hierarchical_models.models import Node, PathEnumerationModel
 from django_hierarchical_models.models.exceptions import (
@@ -16,7 +17,7 @@ from tests.models import ALMTestModel, NSMTestModel, NumberModelMixin
 
 
 class HierarchicalTestModel(NumberModelMixin, HierarchicalModelInterface):
-    pass
+    objects: BaseManager
 
 
 @parameterized_class(

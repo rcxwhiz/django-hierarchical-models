@@ -306,9 +306,8 @@ class NestedSetModel(HierarchicalModelInterface):
         parents_query = self._manager.filter(
             _left__lt=self._left, _right__gt=self._right
         )
-        if not parents_query.exists():
-            return self
-        return parents_query.order_by("_left").first()
+        root = parents_query.order_by("_left").first()
+        return root if root is not None else self
 
     # ------------------------ public class methods ------------------------- #
 

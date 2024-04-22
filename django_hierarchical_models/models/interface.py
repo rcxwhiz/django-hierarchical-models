@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from abc import ABCMeta, abstractmethod
+import copy
 from collections import deque
 from collections.abc import Callable
 from typing import TypeVar
 
 from django.db import models
-from django.db.models import Manager, QuerySet
+from django.db.models import QuerySet
+from django.db.models.manager import BaseManager
 
 from django_hierarchical_models.models.exceptions import (
     AlreadyHasParentException,
@@ -18,11 +19,7 @@ from django_hierarchical_models.models.node import Node
 T = TypeVar("T", bound="HierarchicalModelInterface")
 
 
-class HierarchicalModelABCMeta(ABCMeta, type(models.Model)):
-    pass
-
-
-class HierarchicalModelInterface(models.Model, metaclass=HierarchicalModelABCMeta):
+class HierarchicalModelInterface(models.Model):
     """Django Model with support for hierarchical data.
 
     This interface is implemented multiple times with different tradeoffs.
@@ -37,7 +34,6 @@ class HierarchicalModelInterface(models.Model, metaclass=HierarchicalModelABCMet
 
     # ------------------------ public abstract methods ---------------------- #
 
-    @abstractmethod
     def parent(self: T) -> T | None:
         """The parent of the HierarchicalModel instance.
 
@@ -46,14 +42,12 @@ class HierarchicalModelInterface(models.Model, metaclass=HierarchicalModelABCMet
         Returns:
             Parent instance, or None if there is no parent.
         """
-        pass
+        raise NotImplementedError()
 
-    @abstractmethod
     def is_child_of(self: T, parent: T) -> bool:
         """Checks if the instance is at any level a child to the parent."""
-        pass
+        raise NotImplementedError()
 
-    @abstractmethod
     def direct_children(self: T) -> QuerySet[T]:
         """Gets all the direct descendants of a model.
 
@@ -65,7 +59,7 @@ class HierarchicalModelInterface(models.Model, metaclass=HierarchicalModelABCMet
         Returns:
             An unordered QuerySet of all direct children of this model.
         """
-        pass
+        raise NotImplementedError()
 
     # ------------------------ public class methods ------------------------- #
     # the following models are default implementations which might be
@@ -201,7 +195,11 @@ class HierarchicalModelInterface(models.Model, metaclass=HierarchicalModelABCMet
         ):
             return root
         self._child_finder(
-            root, max_generations, max_siblings, max_total, sibling_transform
+            root,
+            max_generations or -1,
+            max_siblings or -1,
+            max_total or -1,
+            sibling_transform,
         )
         return root
 
@@ -210,9 +208,9 @@ class HierarchicalModelInterface(models.Model, metaclass=HierarchicalModelABCMet
     def _child_finder(
         self: T,
         root: Node[T],
-        max_generations: int | None,
-        max_siblings: int | None,
-        max_total: int | None,
+        max_generations: int,
+        max_siblings: int,
+        max_total: int,
         sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
     ):
         """Evaluates the children of the given node.
@@ -226,21 +224,20 @@ class HierarchicalModelInterface(models.Model, metaclass=HierarchicalModelABCMet
         """
         f = _dispatch_table[
             (
-                max_generations is not None,
-                max_siblings is not None,
-                max_total is not None,
+                max_generations > -1,
+                max_siblings > -1,
+                max_total > -1,
             )
         ]
         f(root, max_generations, max_siblings, max_total, sibling_transform)
 
     @property
-    def _manager(self: T) -> Manager[T]:
+    def _manager(self: T) -> BaseManager[T]:
         """Convenience method to get the object manager at runtime."""
         return self.__class__._default_manager
 
     # ------------------------ private abstract methods --------------------- #
 
-    @abstractmethod
     def _set_parent(self: T, parent: T | None):
         """The actual mechanism of setting the parent.
 
@@ -249,19 +246,19 @@ class HierarchicalModelInterface(models.Model, metaclass=HierarchicalModelABCMet
         Args:
             parent: The parent to be set to.
         """
-        pass
+        raise NotImplementedError()
 
     # ------------------------ dispatch functions --------------------------- #
 
 
 def _no_no_no(
     root: Node[T],
-    max_generations: int,
-    max_siblings: int,
-    max_total: int,
+    _: int,
+    __: int,
+    ___: int,
     sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
 ):
-    queue = deque([(Node[T](None), root)])
+    queue = deque([(copy.copy(root), root)])
     while queue:
         parent_node, node = queue.popleft()
         parent_node.children.append(node)
@@ -276,11 +273,11 @@ def _no_no_no(
 def _yes_no_no(
     root: Node[T],
     max_generations: int,
-    max_siblings: int,
-    max_total: int,
+    _: int,
+    __: int,
     sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
 ):
-    queue = deque([(Node[T](None), root, 0)])
+    queue = deque([(copy.copy(root), root, 0)])
     while queue:
         parent_node, node, generation = queue.popleft()
         parent_node.children.append(node)
@@ -295,12 +292,12 @@ def _yes_no_no(
 
 def _no_yes_no(
     root: Node[T],
-    max_generations: int,
+    _: int,
     max_siblings: int,
-    max_total: int,
+    __: int,
     sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
 ):
-    queue = deque([(Node[T](None), root)])
+    queue = deque([(copy.copy(root), root)])
     while queue:
         parent_node, node = queue.popleft()
         parent_node.children.append(node)
@@ -314,12 +311,12 @@ def _no_yes_no(
 
 def _no_no_yes(
     root: Node[T],
-    max_generations: int,
-    max_siblings: int,
+    _: int,
+    __: int,
     max_total: int,
     sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
 ):
-    queue = deque([(Node[T](None), root)])
+    queue = deque([(copy.copy(root), root)])
     max_total -= 1
     while queue:
         parent_node, node = queue.popleft()
@@ -337,10 +334,10 @@ def _yes_yes_no(
     root: Node[T],
     max_generations: int,
     max_siblings: int,
-    max_total: int,
+    _: int,
     sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
 ):
-    queue = deque([(Node[T](None), root, 0)])
+    queue = deque([(copy.copy(root), root, 0)])
     while queue:
         parent_node, node, generation = queue.popleft()
         parent_node.children.append(node)
@@ -356,11 +353,11 @@ def _yes_yes_no(
 def _yes_no_yes(
     root: Node[T],
     max_generations: int,
-    max_siblings: int,
+    _: int,
     max_total: int,
     sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
 ):
-    queue = deque([(Node[T](None), root, 0)])
+    queue = deque([(copy.copy(root), root, 0)])
     max_total -= 1
     while queue:
         parent_node, node, generation = queue.popleft()
@@ -377,12 +374,12 @@ def _yes_no_yes(
 
 def _no_yes_yes(
     root: Node[T],
-    max_generations: int,
+    _: int,
     max_siblings: int,
     max_total: int,
     sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
 ):
-    queue = deque([(Node[T](None), root)])
+    queue = deque([(copy.copy(root), root)])
     max_total -= 1
     while queue:
         parent_node, node = queue.popleft()
@@ -404,7 +401,7 @@ def _yes_yes_yes(
     max_total: int,
     sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
 ):
-    queue = deque([(Node[T](None), root, 0)])
+    queue = deque([(copy.copy(root), root, 0)])
     max_total -= 1
     while queue:
         parent_node, node, generation = queue.popleft()

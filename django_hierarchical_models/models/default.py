@@ -3,7 +3,7 @@ from typing import TypeVar
 
 from django.conf import settings
 
-from .hierarchical_model import HierarchicalModel
+from django_hierarchical_models.models.hierarchical_model import HierarchicalModel
 
 T = TypeVar("T", bound=HierarchicalModel)
 DefaultHierarchicalModel: T

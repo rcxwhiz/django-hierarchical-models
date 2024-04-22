@@ -1,7 +1,7 @@
 from django.db import models
 from django.db.models import QuerySet
 
-from .hierarchical_model import HierarchicalModel, T
+from django_hierarchical_models.models.hierarchical_model import HierarchicalModel, T
 
 
 class AdjacencyListModel(HierarchicalModel):

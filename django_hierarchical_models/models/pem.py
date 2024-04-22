@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import connection, models
 from django.db.models import QuerySet
 
 from django_hierarchical_models.models.hierarchical_model import HierarchicalModel, T
@@ -12,6 +12,21 @@ class PathEnumerationModel(HierarchicalModel):
     _ancestors = models.JSONField(default=list)
 
     # ------------------------ builtin methods ------------------------------ #
+
+    def __new__(cls, *args, **kwargs):
+        if (
+            not connection.features.supports_json_field
+            or not connection.features.supports_json_field_contains
+        ):
+            raise NotImplementedError(
+                f"This database configuration is missing required JSONField features"
+                f"for PathEnumerationModel. SQLite and Oracle do not support these"
+                f"features (your vendor: {connection.vendor})."
+            )
+
+        # This check only needs to be ran once
+        cls.__new__ = super().__new__
+        return super().__new__(*args, **kwargs)
 
     def __init__(self, *args, **kwargs):
         if len(args) == 0 and "parent" in kwargs:

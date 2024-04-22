@@ -24,11 +24,8 @@ class PathEnumerationModel(HierarchicalModel):
                 f"features (your vendor: {connection.vendor})."
             )
 
-        def new(c, *args, **kwargs):
-            return super().__new__(c)
-
         # This check only needs to be ran once
-        cls.__new__ = new
+        cls.__new__ = lambda a, *b, **c: super().__new__(a)
         return super().__new__(cls)
 
     def __init__(self, *args, **kwargs):

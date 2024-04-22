@@ -12,7 +12,6 @@ packages = [{include = "django_hierarchical_models"}]
 python = "^3.10"
 django = "^4.2 || ^5.0"
 
-
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.7.0"
 black = "^24.4.0"
@@ -21,7 +20,7 @@ flake8 = "^7.0.0"
 pytest = "^8.1.1"
 pytest-django = "^4.8.0"
 isort = "^5.13.2"
-psycopg2 = "^2.9.9"
+psycopg2-binary = "^2.9.9"
 
 [build-system]
 requires = ["poetry-core"]

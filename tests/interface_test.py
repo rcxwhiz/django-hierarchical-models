@@ -6,14 +6,14 @@ from django.db.models.manager import BaseManager
 from django.test import TestCase
 from parameterized import parameterized_class  # type: ignore
 
-from django_hierarchical_models.models import Node, PathEnumerationModel
+from django_hierarchical_models.models import Node
 from django_hierarchical_models.models.exceptions import (
     AlreadyHasParentException,
     CycleException,
     NotAChildException,
 )
 from django_hierarchical_models.models.interface import HierarchicalModelInterface
-from tests.models import ALMTestModel, NSMTestModel, NumberModelMixin
+from tests.models import ALMTestModel, NSMTestModel, NumberModelMixin, PEMTestModel
 
 
 class HierarchicalTestModel(NumberModelMixin, HierarchicalModelInterface):
@@ -21,7 +21,7 @@ class HierarchicalTestModel(NumberModelMixin, HierarchicalModelInterface):
 
 
 @parameterized_class(
-    ("model_class",), ((ALMTestModel,), (NSMTestModel,), (PathEnumerationModel,))
+    ("model_class",), ((ALMTestModel,), (NSMTestModel,), (PEMTestModel,))
 )
 class HierarchicalModelInterfaceTester(TestCase):
     model_class: HierarchicalTestModel
@@ -30,7 +30,7 @@ class HierarchicalModelInterfaceTester(TestCase):
         super().__init__(*args, **kwargs)
 
         # don't want to skip tests if intended to use postgres
-        if self.model_class == PathEnumerationModel and "POSTGRES_DB" not in os.environ:
+        if self.model_class == PEMTestModel and "POSTGRES_DB" not in os.environ:
             db_engine = settings.DATABASES["default"]["ENGINE"]
 
             if "sqlite" in db_engine or "oracle" in db_engine:

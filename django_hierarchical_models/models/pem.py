@@ -13,7 +13,7 @@ class PathEnumerationModel(HierarchicalModel):
 
     # ------------------------ builtin methods ------------------------------ #
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls):
         if (
             not connection.features.supports_json_field
             or not connection.features.supports_json_field_contains
@@ -26,7 +26,7 @@ class PathEnumerationModel(HierarchicalModel):
 
         # This check only needs to be ran once
         cls.__new__ = super().__new__
-        return super().__new__(cls, *args, **kwargs)
+        return super().__new__(cls)
 
     def __init__(self, *args, **kwargs):
         if len(args) == 0 and "parent" in kwargs:

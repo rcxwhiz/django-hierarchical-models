@@ -1,10 +1,10 @@
 from django.db import models
 from django.db.models import F, Max, QuerySet
 
-from django_hierarchical_models.models.hierarchical_model import HierarchicalModel, T
+from django_hierarchical_models.models.interface import HierarchicalModelInterface, T
 
 
-class NestedSetModel(HierarchicalModel):
+class NestedSetModel(HierarchicalModelInterface):
     """Nested Set Model implementation of HierarchicalModel.
 
     Each model has two integer fields, a left and a right. In NSM, if a model's

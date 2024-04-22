@@ -3,7 +3,7 @@ import os
 from django.conf import settings
 from django.test import TestCase
 
-from tests.interface_tester import HierarchicalModelInterfaceTester
+from tests.interface import HierarchicalModelInterfaceTester
 from tests.models import ALMTestModel, NSMTestModel, PEMTestModel
 
 

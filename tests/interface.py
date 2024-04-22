@@ -1,16 +1,17 @@
 import copy
 from typing import TypeVar
 
+from django_hierarchical_models.models import Node
 from django_hierarchical_models.models.exceptions import (
     AlreadyHasParentException,
     CycleException,
     NotAChildException,
 )
-from django_hierarchical_models.models.hierarchical_model import HierarchicalModel
+from django_hierarchical_models.models.interface import HierarchicalModelInterface
 from tests.models import NumberModelMixin
 
 
-class HierarchicalTestModel(NumberModelMixin, HierarchicalModel):
+class HierarchicalTestModel(NumberModelMixin, HierarchicalModelInterface):
     pass
 
 
@@ -195,8 +196,9 @@ class HierarchicalModelInterfaceTester:
         n1 = self.create(1)
         n2 = n1.create_child(num=2)
         n3 = n1.create_child(num=3)
-        expected_children = HierarchicalModel.Node(
-            n1, [HierarchicalModel.Node(n2), HierarchicalModel.Node(n3)]
+        expected_children = Node[self.model_class](
+            n1,
+            [Node[self.model_class](n2), Node[self.model_class](n3)],
         )
         self.assertEqual(
             n1.children(sibling_transform=lambda x: x.order_by("num")),
@@ -660,38 +662,38 @@ class HierarchicalModelInterfaceTester:
         self.assertEqual(self.n32.root(), self.n20)
 
     def test_advanced_children(self):
-        mn1 = HierarchicalModel.Node(self.n1)
-        mn2 = HierarchicalModel.Node(self.n2)
-        mn3 = HierarchicalModel.Node(self.n3)
-        mn4 = HierarchicalModel.Node(self.n4)
-        mn5 = HierarchicalModel.Node(self.n5)
-        mn6 = HierarchicalModel.Node(self.n6)
-        mn7 = HierarchicalModel.Node(self.n7)
-        mn8 = HierarchicalModel.Node(self.n8)
-        mn9 = HierarchicalModel.Node(self.n9)
-        mn10 = HierarchicalModel.Node(self.n10)
-        mn11 = HierarchicalModel.Node(self.n11)
-        mn12 = HierarchicalModel.Node(self.n12)
-        mn13 = HierarchicalModel.Node(self.n13)
-        mn14 = HierarchicalModel.Node(self.n14)
-        mn15 = HierarchicalModel.Node(self.n15)
-        mn16 = HierarchicalModel.Node(self.n16)
-        mn17 = HierarchicalModel.Node(self.n17)
-        mn18 = HierarchicalModel.Node(self.n18)
-        mn19 = HierarchicalModel.Node(self.n19)
-        mn20 = HierarchicalModel.Node(self.n20)
-        mn21 = HierarchicalModel.Node(self.n21)
-        mn22 = HierarchicalModel.Node(self.n22)
-        mn23 = HierarchicalModel.Node(self.n23)
-        mn24 = HierarchicalModel.Node(self.n24)
-        mn25 = HierarchicalModel.Node(self.n25)
-        mn26 = HierarchicalModel.Node(self.n26)
-        mn27 = HierarchicalModel.Node(self.n27)
-        mn28 = HierarchicalModel.Node(self.n28)
-        mn29 = HierarchicalModel.Node(self.n29)
-        mn30 = HierarchicalModel.Node(self.n30)
-        mn31 = HierarchicalModel.Node(self.n31)
-        mn32 = HierarchicalModel.Node(self.n32)
+        mn1 = Node[self.model_class](self.n1)
+        mn2 = Node[self.model_class](self.n2)
+        mn3 = Node[self.model_class](self.n3)
+        mn4 = Node[self.model_class](self.n4)
+        mn5 = Node[self.model_class](self.n5)
+        mn6 = Node[self.model_class](self.n6)
+        mn7 = Node[self.model_class](self.n7)
+        mn8 = Node[self.model_class](self.n8)
+        mn9 = Node[self.model_class](self.n9)
+        mn10 = Node[self.model_class](self.n10)
+        mn11 = Node[self.model_class](self.n11)
+        mn12 = Node[self.model_class](self.n12)
+        mn13 = Node[self.model_class](self.n13)
+        mn14 = Node[self.model_class](self.n14)
+        mn15 = Node[self.model_class](self.n15)
+        mn16 = Node[self.model_class](self.n16)
+        mn17 = Node[self.model_class](self.n17)
+        mn18 = Node[self.model_class](self.n18)
+        mn19 = Node[self.model_class](self.n19)
+        mn20 = Node[self.model_class](self.n20)
+        mn21 = Node[self.model_class](self.n21)
+        mn22 = Node[self.model_class](self.n22)
+        mn23 = Node[self.model_class](self.n23)
+        mn24 = Node[self.model_class](self.n24)
+        mn25 = Node[self.model_class](self.n25)
+        mn26 = Node[self.model_class](self.n26)
+        mn27 = Node[self.model_class](self.n27)
+        mn28 = Node[self.model_class](self.n28)
+        mn29 = Node[self.model_class](self.n29)
+        mn30 = Node[self.model_class](self.n30)
+        mn31 = Node[self.model_class](self.n31)
+        mn32 = Node[self.model_class](self.n32)
 
         mn1.children = [mn2, mn3, mn4]
         mn2.children = [mn5, mn6, mn7]
@@ -806,36 +808,36 @@ class HierarchicalModelInterfaceTester:
         )
 
     def test_advanced_children_options(self):
-        mn1 = HierarchicalModel.Node(self.n1)
-        mn2 = HierarchicalModel.Node(self.n2)
-        mn3 = HierarchicalModel.Node(self.n3)
-        mn4 = HierarchicalModel.Node(self.n4)
-        mn5 = HierarchicalModel.Node(self.n5)
-        mn6 = HierarchicalModel.Node(self.n6)
-        mn7 = HierarchicalModel.Node(self.n7)
-        mn8 = HierarchicalModel.Node(self.n8)
-        mn9 = HierarchicalModel.Node(self.n9)
-        mn10 = HierarchicalModel.Node(self.n10)
-        mn11 = HierarchicalModel.Node(self.n11)
-        mn12 = HierarchicalModel.Node(self.n12)
-        mn13 = HierarchicalModel.Node(self.n13)
-        mn14 = HierarchicalModel.Node(self.n14)
-        mn15 = HierarchicalModel.Node(self.n15)
-        mn16 = HierarchicalModel.Node(self.n16)
-        mn17 = HierarchicalModel.Node(self.n17)
-        mn20 = HierarchicalModel.Node(self.n20)
-        mn21 = HierarchicalModel.Node(self.n21)
-        mn22 = HierarchicalModel.Node(self.n22)
-        mn23 = HierarchicalModel.Node(self.n23)
-        mn24 = HierarchicalModel.Node(self.n24)
-        mn25 = HierarchicalModel.Node(self.n25)
-        mn26 = HierarchicalModel.Node(self.n26)
-        mn27 = HierarchicalModel.Node(self.n27)
-        mn28 = HierarchicalModel.Node(self.n28)
-        mn29 = HierarchicalModel.Node(self.n29)
-        mn30 = HierarchicalModel.Node(self.n30)
-        mn31 = HierarchicalModel.Node(self.n31)
-        mn32 = HierarchicalModel.Node(self.n32)
+        mn1 = Node[self.model_class](self.n1)
+        mn2 = Node[self.model_class](self.n2)
+        mn3 = Node[self.model_class](self.n3)
+        mn4 = Node[self.model_class](self.n4)
+        mn5 = Node[self.model_class](self.n5)
+        mn6 = Node[self.model_class](self.n6)
+        mn7 = Node[self.model_class](self.n7)
+        mn8 = Node[self.model_class](self.n8)
+        mn9 = Node[self.model_class](self.n9)
+        mn10 = Node[self.model_class](self.n10)
+        mn11 = Node[self.model_class](self.n11)
+        mn12 = Node[self.model_class](self.n12)
+        mn13 = Node[self.model_class](self.n13)
+        mn14 = Node[self.model_class](self.n14)
+        mn15 = Node[self.model_class](self.n15)
+        mn16 = Node[self.model_class](self.n16)
+        mn17 = Node[self.model_class](self.n17)
+        mn20 = Node[self.model_class](self.n20)
+        mn21 = Node[self.model_class](self.n21)
+        mn22 = Node[self.model_class](self.n22)
+        mn23 = Node[self.model_class](self.n23)
+        mn24 = Node[self.model_class](self.n24)
+        mn25 = Node[self.model_class](self.n25)
+        mn26 = Node[self.model_class](self.n26)
+        mn27 = Node[self.model_class](self.n27)
+        mn28 = Node[self.model_class](self.n28)
+        mn29 = Node[self.model_class](self.n29)
+        mn30 = Node[self.model_class](self.n30)
+        mn31 = Node[self.model_class](self.n31)
+        mn32 = Node[self.model_class](self.n32)
 
         mn1.children = [mn2, mn3, mn4]
         mn2.children = [mn5, mn6, mn7]

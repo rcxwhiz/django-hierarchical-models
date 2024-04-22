@@ -1,10 +1,10 @@
 from django.db import models
 from django.db.models import QuerySet
 
-from django_hierarchical_models.models.hierarchical_model import HierarchicalModel, T
+from django_hierarchical_models.models.interface import HierarchicalModelInterface, T
 
 
-class AdjacencyListModel(HierarchicalModel):
+class AdjacencyListModel(HierarchicalModelInterface):
     """Adjacency List Model implementation of HierarchicalModel.
 
     Class description here.

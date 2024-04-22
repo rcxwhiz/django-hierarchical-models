@@ -1,10 +1,10 @@
 from django.db import connection, models
 from django.db.models import QuerySet
 
-from django_hierarchical_models.models.hierarchical_model import HierarchicalModel, T
+from django_hierarchical_models.models.interface import HierarchicalModelInterface, T
 
 
-class PathEnumerationModel(HierarchicalModel):
+class PathEnumerationModel(HierarchicalModelInterface):
     pass
 
     # ------------------------ class members -------------------------------- #

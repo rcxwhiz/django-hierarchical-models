@@ -53,11 +53,16 @@ class EditBenchmark(TestCase):
         for instance in self.instances[1::2]:
             instance.delete()
 
-    # def test_add_child(self):
-    #     pass
-    #
-    # def test_remove_child(self):
-    #     pass
+    def test_add_child(self):
+        for instance in self.instances[:-1]:
+            self.instances[-1].add_child(instance)
+
+    def test_remove_child(self):
+        for instance in self.instances[:-1]:
+            self.instances[-1].add_child(instance)
+
+        for instance in self.instances[:-1]:
+            self.instances[-1].remove_child(instance)
 
 
 class ALMEditBenchmark(EditBenchmark):
@@ -91,7 +96,16 @@ class QueryBenchmark(TestCase):
     model_class = HierarchicalModelInterface
 
     def setUp(self):
-        self.instances = [self.model_class.objects.create(num=i) for i in range(500)]
+        num_layers = 4
+        num_siblings = 5
+        layer = [self.model_class.objects.create(num=i) for i in range(num_siblings)]
+        for _ in range(num_layers):
+            new_layer = []
+            for instance in layer:
+                for _ in range(num_siblings):
+                    new_layer.append(instance.create_child(num=0))
+            layer = new_layer
+        self.instances = list(self.model_class.objects.all())
 
     def test_get_parent(self):
         for instance in self.instances:
@@ -110,5 +124,13 @@ class QueryBenchmark(TestCase):
             _ = instance.children()
 
 
-class MixedBenchmark(TestCase):
-    pass
+class ALMQueryBenchmark(QueryBenchmark):
+    model_class = ALMTestModel
+
+
+class NSMQueryBenchmark(QueryBenchmark):
+    model_class = NSMTestModel
+
+
+class PEMQueryBenchmark(QueryBenchmark):
+    model_class = PEMTestModel

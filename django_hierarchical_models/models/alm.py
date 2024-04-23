@@ -41,11 +41,12 @@ class AdjacencyListModel(HierarchicalModelInterface):
 
     def is_child_of(self: T, parent: T) -> bool:
         self.refresh_from_db(fields=("_parent",))
-        if self._parent is None:
-            return False
-        if self._parent == parent:
-            return True
-        return self._parent.is_child_of(parent)
+        self_parent = self._parent
+        while self_parent is not None:
+            if self_parent == parent:
+                return True
+            self_parent = self_parent._parent
+        return False
 
     def _set_parent(self: T, parent: T | None):
         self._parent = parent

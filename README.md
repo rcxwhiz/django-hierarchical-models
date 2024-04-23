@@ -1,5 +1,11 @@
 # django-hierarchical-models
 
+[![Tests](https://github.com/rcxwhiz/django-hierarchical-models/actions/workflows/test.yml/badge.svg)](https://github.com/rcxwhiz/django-hierarchical-models/actions/workflows/)
+[![Coverage](https://codecov.io/gh/rcxwhiz/django-hierarchical-models/branch/main/graph/badge.svg)](https://codecov.io/gh/rcxwhiz/django-hierarchical-models/)
+[![PyPi](https://img.shields.io/pypi/v/django-hierarchical-models.svg)](https://pypi.python.org/pypi/django-hierarchical-models/)
+[![Supported Python versions](https://img.shields.io/pypi/pyversions/django-hierarchical-models.svg)](https://pypi.python.org/pypi/django-hierarchical-models/)
+[![Supported Django versions](https://img.shields.io/pypi/djversions/django-hierarchical-models.svg)](https://pypi.python.org/pypi/django-hierarchical-models/)
+
 This package provides several implementations Django models which support hierarchical
 data. Efficiently modeling hierarchical, or tree like data, in a relational database
 can be non-trivial. The following models implement the same interface, but there have

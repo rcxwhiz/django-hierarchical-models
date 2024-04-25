@@ -309,11 +309,6 @@ class NestedSetModel(HierarchicalModelInterface):
             if child._left > right_value:
                 direct_children.append(child.pk)
                 right_value = child._right
-        # next_child = children_chunk.first()
-        # while next_child is not None:
-        #     direct_children.append(next_child.pk)
-        #     children_chunk = children_chunk.filter(_left__gt=next_child._right)
-        #     next_child = children_chunk.first()
         return self._manager.filter(pk__in=direct_children)
 
     def root(self: T) -> T:

@@ -1,5 +1,11 @@
 # django-hierarchical-models
 
+[![Tests](https://github.com/rcxwhiz/django-hierarchical-models/actions/workflows/test.yml/badge.svg)](https://github.com/rcxwhiz/django-hierarchical-models/actions/workflows/)
+[![Coverage](https://codecov.io/gh/rcxwhiz/django-hierarchical-models/branch/main/graph/badge.svg)](https://codecov.io/gh/rcxwhiz/django-hierarchical-models/)
+[![PyPi](https://img.shields.io/pypi/v/django-hierarchical-models.svg)](https://pypi.python.org/pypi/django-hierarchical-models/)
+[![Supported Python versions](https://img.shields.io/pypi/pyversions/django-hierarchical-models.svg)](https://pypi.python.org/pypi/django-hierarchical-models/)
+[![Supported Django versions](https://img.shields.io/pypi/djversions/django-hierarchical-models.svg)](https://pypi.python.org/pypi/django-hierarchical-models/)
+
 This package provides several implementations Django models which support hierarchical
 data. Efficiently modeling hierarchical, or tree like data, in a relational database
 can be non-trivial. The following models implement the same interface, but there have
@@ -34,3 +40,16 @@ instance for a single edit.
 
 Calls to `HierarchicalModel.children()` return this type, which has `instance` and
 `children` members, with the children being additional instances of `Node`.
+
+#### Benchmarks
+
+These benchmarks are to illustrate the relative performance of the different models. As
+of now they are kind of whacked out. These tests were run with Postgres.
+
+| Model            | Query Ancestors | Query Parent | Query Children | Query Direct Children | Create | Create Child | Delete | Delete Parent | Add Child | Remove Child | Set Parent | Set Parent Unchecked* |
+|------------------|-----------------|--------------|----------------|-----------------------|--------|--------------|--------|---------------|-----------|--------------|------------|-----------------------|
+| Adjacency List   | 9.56            | 2.76         | 5.17           | 0.96                  | 0.98   | 0.33         | 0.72   | 0.95          | 0.69      | 1.64         | 133.60     | 0.93                  |
+| Path Enumeration | 9.17            | 2.67         | 29.71          | 0.84                  | 0.99   | 0.32         | 0.75   | 1.26          | 0.94      | 1.79         | 2.98       |                       |
+| Nested Set       | 719.37          | 964.90       | 1033.37        | 1011.12               | 240.15 | 91.82        | 179.92 | 270.84        | 95.08     | 411.03       | 863.99     |                       |
+
+\* function only available on Adjacency List Model

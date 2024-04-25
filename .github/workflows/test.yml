@@ -1,4 +1,4 @@
-name: Run tests
+name: Tests
 
 on: [ push, pull_request ]
 
@@ -32,18 +32,28 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
         cache: pip
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         python -m pip install tox tox-gh-actions
+
     - name: Test with tox
-      run: tox
+      run: tox -v -- --cov --cov-append --cov-report term-missing --cov-report xml
       env:
         POSTGRES_DB: postgres
         POSTGRES_USER: postgres
         POSTGRES_PASSWORD: postgres
+
+    - name: Upload coverage
+      uses: codecov/codecov-action@v4
+      with:
+        name: Python ${{ matrix.python-version }}
+        token: ${{ secrets.CODECOV_TOKEN }}
+        slug: rcxwhiz/django-hierarchical-models

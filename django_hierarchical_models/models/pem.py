@@ -1,7 +1,11 @@
+from typing import TypeVar
+
 from django.db import connection, models
 from django.db.models import QuerySet
 
-from django_hierarchical_models.models.interface import HierarchicalModelInterface, T
+from django_hierarchical_models.models.interface import HierarchicalModelInterface
+
+T = TypeVar("T", bound="PathEnumerationModel")
 
 
 class PathEnumerationModel(HierarchicalModelInterface):

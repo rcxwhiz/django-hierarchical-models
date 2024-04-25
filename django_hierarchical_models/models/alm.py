@@ -1,7 +1,11 @@
+from typing import TypeVar
+
 from django.db import models
 from django.db.models import QuerySet
 
-from django_hierarchical_models.models.interface import HierarchicalModelInterface, T
+from django_hierarchical_models.models.interface import HierarchicalModelInterface
+
+T = TypeVar("T", bound="AdjacencyListModel")
 
 
 class AdjacencyListModel(HierarchicalModelInterface):
@@ -33,15 +37,16 @@ class AdjacencyListModel(HierarchicalModelInterface):
 
     def parent(self: T) -> T | None:
         self.refresh_from_db(fields=("_parent",))
-        return self._parent
+        return self._parent  # type: ignore
 
     def is_child_of(self: T, parent: T) -> bool:
         self.refresh_from_db(fields=("_parent",))
-        if self._parent is None:
-            return False
-        if self._parent == parent:
-            return True
-        return self._parent.is_child_of(parent)
+        self_parent = self._parent
+        while self_parent is not None:
+            if self_parent == parent:
+                return True
+            self_parent = self_parent._parent
+        return False
 
     def _set_parent(self: T, parent: T | None):
         self._parent = parent

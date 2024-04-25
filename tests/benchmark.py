@@ -95,17 +95,18 @@ class PEMEditBenchmark(EditBenchmark):
 class QueryBenchmark(TestCase):
     model_class = HierarchicalModelInterface
 
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         num_layers = 4
         num_siblings = 5
-        layer = [self.model_class.objects.create(num=i) for i in range(num_siblings)]
+        layer = [cls.model_class.objects.create(num=i) for i in range(num_siblings)]
         for _ in range(num_layers):
             new_layer = []
             for instance in layer:
                 for _ in range(num_siblings):
                     new_layer.append(instance.create_child(num=0))
             layer = new_layer
-        self.instances = list(self.model_class.objects.all())
+        cls.instances = list(cls.model_class.objects.all())
 
     def test_get_parent(self):
         for instance in self.instances:

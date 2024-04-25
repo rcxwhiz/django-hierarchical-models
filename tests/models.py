@@ -22,6 +22,12 @@ class ALMTestModel(NumberModelMixin, AdjacencyListModel):
 
 
 class NSMTestModel(NumberModelMixin, NestedSetModel):
+    class Meta:
+        indexes = [
+            models.Index(fields=["_left"]),
+            models.Index(fields=["_right"]),
+        ]
+
     def __str__(self):
         return f"({self.num}|{self._left}|{self._right})"
 

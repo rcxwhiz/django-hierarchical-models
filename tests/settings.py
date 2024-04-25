@@ -22,6 +22,9 @@ else:
             "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "postgres"),
             "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
             "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+            "TEST": {
+                "MIGRATE": True,
+            },
         },
     }
 

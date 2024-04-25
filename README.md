@@ -46,12 +46,10 @@ Calls to `HierarchicalModel.children()` return this type, which has `instance` a
 These benchmarks are to illustrate the relative performance of the different models. As
 of now they are kind of whacked out. These tests were run with Postgres.
 
-| Model            | Query Ancestors | Query Parent    | Query Children   | Query Direct Children | Create        | Create Child  | Delete          | Delete Parent   | Add Child     | Remove Child    | Set Parent      | Set Parent Unchecked* |
-|------------------|-----------------|-----------------|------------------|-----------------------|---------------|---------------|-----------------|-----------------|---------------|-----------------|-----------------|-----------------------|
-| Adjacency List   | 9.56            | 2.76            | 5.17             | 0.96                  | 0.98          | 0.33          | 0.72            | 0.95            | 0.69          | 1.64            | 133.60          | 0.93                  |
-| Path Enumeration | 9.17            | 2.67            | 29.71            | 0.84                  | 0.99          | 0.32          | 0.75            | 1.26            | 0.94          | 1.79            | 2.98            |                       |
-| Nested Set       | 719.37 (586.93) | 964.90 (119.02) | 1033.37 (749.99) | 1011.12 (383.39)      | 240.15 (3.49) | 91.82 (60.26) | 179.92 (114.67) | 270.84 (175.47) | 95.08 (73.14) | 411.03 (293.07) | 863.99 (569.30) |                       |
+| Model            | Query Ancestors | Query Parent | Query Children | Query Direct Children | Create | Create Child | Delete | Delete Parent | Add Child | Remove Child | Set Parent | Set Parent Unchecked* |
+|------------------|-----------------|--------------|----------------|-----------------------|--------|--------------|--------|---------------|-----------|--------------|------------|-----------------------|
+| Adjacency List   | 9.56            | 2.76         | 5.17           | 0.96                  | 0.98   | 0.33         | 0.72   | 0.95          | 0.69      | 1.64         | 133.60     | 0.93                  |
+| Path Enumeration | 9.17            | 2.67         | 29.71          | 0.84                  | 0.99   | 0.32         | 0.75   | 1.26          | 0.94      | 1.79         | 2.98       |                       |
+| Nested Set       | 169.86          | 118.97       | 211.75         | 107.30                | 3.31   | 59.19        | 113.79 | 175.11        | 71.13     | 293.61       | 572.47     |                       |
 
 \* function only available on Adjacency List Model
-
-NSM setup query tests: 416.28

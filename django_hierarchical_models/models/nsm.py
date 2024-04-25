@@ -276,6 +276,15 @@ class NestedSetModel(HierarchicalModelInterface):
         self_chunk = self._manager.filter(pk__in=self_chunk_items)
         self._shift_chunk(self_chunk, *self_shift)
 
+    def ancestors(self: T, max_level: int | None = None) -> list[T]:
+        self.refresh_from_db(fields=("_left", "_right"))
+        ancestors = self._manager.filter(
+            _left__lt=self._left, _right__gt=self._right
+        ).order_by("-_left")
+        if max_level is not None:
+            ancestors = ancestors[:max_level]
+        return list(ancestors)
+
     def direct_children(self: T) -> QuerySet[T]:
         """Gets all the direct descendants of a model.
 
@@ -294,11 +303,17 @@ class NestedSetModel(HierarchicalModelInterface):
             _left__gt=self._left, _right__lt=self._right
         ).order_by("_left")
         direct_children = []
-        next_child = children_chunk.first()
-        while next_child is not None:
-            direct_children.append(next_child.pk)
-            children_chunk = children_chunk.filter(_left__gt=next_child._right)
-            next_child = children_chunk.first()
+
+        right_value = -1
+        for child in children_chunk:
+            if child._left > right_value:
+                direct_children.append(child.pk)
+                right_value = child._right
+        # next_child = children_chunk.first()
+        # while next_child is not None:
+        #     direct_children.append(next_child.pk)
+        #     children_chunk = children_chunk.filter(_left__gt=next_child._right)
+        #     next_child = children_chunk.first()
         return self._manager.filter(pk__in=direct_children)
 
     def root(self: T) -> T:

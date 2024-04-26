@@ -40,7 +40,6 @@ class AdjacencyListModel(HierarchicalModelInterface):
         return self._parent  # type: ignore
 
     def is_child_of(self: T, parent: T) -> bool:
-        self.refresh_from_db(fields=("_parent",))
         self_parent = self._parent
         while self_parent is not None:
             if self_parent == parent:
@@ -58,3 +57,10 @@ class AdjacencyListModel(HierarchicalModelInterface):
 
     def direct_children(self: T) -> QuerySet[T]:
         return self._manager.filter(_parent=self)
+
+    def root(self: T) -> T:
+        root = self
+        self.refresh_from_db(fields=("_parent",))
+        while root._parent is not None:
+            root = root._parent  # type: ignore
+        return root

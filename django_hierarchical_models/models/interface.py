@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 from collections import deque
 from collections.abc import Callable
 from typing import TypeVar
@@ -258,7 +257,8 @@ def _no_no_no(
     ___: int,
     sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
 ):
-    queue = deque([(copy.copy(root), root)])
+    queue: deque[tuple[Node[T], Node[T]]] = deque()
+    queue.append((Node(None), root))  # type: ignore
     while queue:
         parent_node, node = queue.popleft()
         parent_node.children.append(node)
@@ -277,7 +277,8 @@ def _yes_no_no(
     __: int,
     sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
 ):
-    queue = deque([(copy.copy(root), root, 0)])
+    queue: deque[tuple[Node[T], Node[T], int]] = deque()
+    queue.append((Node(None), root, 0))  # type: ignore
     while queue:
         parent_node, node, generation = queue.popleft()
         parent_node.children.append(node)
@@ -297,7 +298,8 @@ def _no_yes_no(
     __: int,
     sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
 ):
-    queue = deque([(copy.copy(root), root)])
+    queue: deque[tuple[Node[T], Node[T]]] = deque()
+    queue.append((Node(None), root))  # type: ignore
     while queue:
         parent_node, node = queue.popleft()
         parent_node.children.append(node)
@@ -316,7 +318,8 @@ def _no_no_yes(
     max_total: int,
     sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
 ):
-    queue = deque([(copy.copy(root), root)])
+    queue: deque[tuple[Node[T], Node[T]]] = deque()
+    queue.append((Node(None), root))  # type: ignore
     max_total -= 1
     while queue:
         parent_node, node = queue.popleft()
@@ -337,7 +340,8 @@ def _yes_yes_no(
     _: int,
     sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
 ):
-    queue = deque([(copy.copy(root), root, 0)])
+    queue: deque[tuple[Node[T], Node[T], int]] = deque()
+    queue.append((Node(None), root, 0))  # type: ignore
     while queue:
         parent_node, node, generation = queue.popleft()
         parent_node.children.append(node)
@@ -357,7 +361,8 @@ def _yes_no_yes(
     max_total: int,
     sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
 ):
-    queue = deque([(copy.copy(root), root, 0)])
+    queue: deque[tuple[Node[T], Node[T], int]] = deque()
+    queue.append((Node(None), root, 0))  # type: ignore
     max_total -= 1
     while queue:
         parent_node, node, generation = queue.popleft()
@@ -379,7 +384,8 @@ def _no_yes_yes(
     max_total: int,
     sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
 ):
-    queue = deque([(copy.copy(root), root)])
+    queue: deque[tuple[Node[T], Node[T]]] = deque()
+    queue.append((Node(None), root))  # type: ignore
     max_total -= 1
     while queue:
         parent_node, node = queue.popleft()
@@ -401,7 +407,8 @@ def _yes_yes_yes(
     max_total: int,
     sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None,
 ):
-    queue = deque([(copy.copy(root), root, 0)])
+    queue: deque[tuple[Node[T], Node[T], int]] = deque()
+    queue.append((Node(None), root, 0))  # type: ignore
     max_total -= 1
     while queue:
         parent_node, node, generation = queue.popleft()

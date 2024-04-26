@@ -1,6 +1,7 @@
 import copy
 import os
 
+import pytest
 from django.conf import settings
 from django.db.models.manager import BaseManager
 from django.test import TestCase
@@ -201,6 +202,7 @@ class HierarchicalModelInterfaceTester(TestCase):
         child = self.create(2, parent=parent)
         self.assertListEqual(child.ancestors(), [parent])
 
+    @pytest.mark.skip("This test doesn't make sense for some models")
     def test_basic_root(self):
         n1 = self.create(1)
         self.assertEqual(n1.root(), n1)

@@ -62,5 +62,5 @@ class AdjacencyListModel(HierarchicalModelInterface):
         root = self
         self.refresh_from_db(fields=("_parent",))
         while root._parent is not None:
-            root = root._parent
+            root = root._parent  # type: ignore
         return root

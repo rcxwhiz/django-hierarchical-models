@@ -128,11 +128,16 @@ class QueryBenchmark(TestCase):
         for instance in self.instances:
             _ = instance.root()
 
+    def test_is_child_of(self):
+        for instance_1, instance_2 in pairwise(self.instances):
+            _ = instance_1.is_child_of(instance_2)
+            _ = instance_2.is_child_of(instance_1)
+
 
 class ALMQueryBenchmark(QueryBenchmark):
     model_class = ALMTestModel
-    n = 10000
-    density = 3
+    n = 50000
+    density = 10
 
 
 class NSMQueryBenchmark(QueryBenchmark):
@@ -143,5 +148,5 @@ class NSMQueryBenchmark(QueryBenchmark):
 
 class PEMQueryBenchmark(QueryBenchmark):
     model_class = PEMTestModel
-    n = 10000
-    density = 3
+    n = 50000
+    density = 10

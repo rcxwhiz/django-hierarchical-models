@@ -94,19 +94,19 @@ class PEMEditBenchmark(EditBenchmark):
 
 class QueryBenchmark(TestCase):
     model_class = HierarchicalModelInterface
+    n: int
+    density: int
 
     @classmethod
     def setUpTestData(cls):
-        num_layers = 4
-        num_siblings = 5
-        layer = [cls.model_class.objects.create(num=i) for i in range(num_siblings)]
-        for _ in range(num_layers):
-            new_layer = []
-            for instance in layer:
-                for _ in range(num_siblings):
-                    new_layer.append(instance.create_child(num=0))
-            layer = new_layer
-        cls.instances = list(cls.model_class.objects.all())
+        cls.instances = []
+        for i in range(cls.n):
+            if i % cls.density == 0:
+                cls.instances.append(cls.model_class.objects.create(num=i))
+            else:
+                cls.instances.append(
+                    cls.instances[(i * 31) % len(cls.instances)].create_child(num=i)
+                )
 
     def test_get_parent(self):
         for instance in self.instances:
@@ -124,14 +124,24 @@ class QueryBenchmark(TestCase):
         for instance in self.instances:
             _ = instance.children()
 
+    def test_get_root(self):
+        for instance in self.instances:
+            _ = instance.root()
+
 
 class ALMQueryBenchmark(QueryBenchmark):
     model_class = ALMTestModel
+    n = 10000
+    density = 3
 
 
 class NSMQueryBenchmark(QueryBenchmark):
     model_class = NSMTestModel
+    n = 1000
+    density = 3
 
 
 class PEMQueryBenchmark(QueryBenchmark):
     model_class = PEMTestModel
+    n = 10000
+    density = 3

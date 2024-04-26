@@ -9,7 +9,6 @@ T = TypeVar("T", bound="PathEnumerationModel")
 
 
 class PathEnumerationModel(HierarchicalModelInterface):
-    pass
 
     # ------------------------ class members -------------------------------- #
 
@@ -67,11 +66,16 @@ class PathEnumerationModel(HierarchicalModelInterface):
     def direct_children(self: T) -> QuerySet[T]:
         return self._manager.filter(_ancestors__0=self.pk)
 
+    def root(self: T) -> T:
+        self.refresh_from_db(fields=("_ancestors",))
+        if len(self._ancestors) == 0:
+            return self
+        return self._manager.get(pk=self._ancestors[-1])
+
     def _set_parent(self: T, parent: T | None):
         if parent is None:
             self._ancestors = []
         else:
             parent.refresh_from_db(fields=("_ancestors",))
-            self._ancestors = parent._ancestors.copy()
-            self._ancestors.insert(0, parent.pk)
+            self._ancestors = [parent.pk] + parent._ancestors
         self.save(update_fields=("_ancestors",))

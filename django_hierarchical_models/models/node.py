@@ -1,31 +1,16 @@
 from __future__ import annotations
 
 import copy
+from dataclasses import dataclass, field
 from typing import Generic, TypeVar
 
 T = TypeVar("T")
 
 
+@dataclass
 class Node(Generic[T]):
-    def __init__(
-        self,
-        instance: T,
-        children: list[Node[T]] | None = None,
-    ):
-        self.instance = instance
-        self.children = children if children is not None else []
-
-    def __eq__(self, other):
-        if not isinstance(other, Node):
-            return False
-        if self.instance != other.instance:
-            return False
-        if len(self.children) != len(other.children):
-            return False
-        return all(
-            self_child == other_child
-            for self_child, other_child in zip(self.children, other.children)
-        )
+    instance: T
+    children: list[Node[T]] = field(default_factory=list)
 
     def __copy__(self):
         return Node(self.instance, [copy.copy(child) for child in self.children])

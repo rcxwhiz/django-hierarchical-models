@@ -45,8 +45,8 @@ class HierarchicalModelSimpleTests(TestCase):
         child.set_parent(parent)
         self.assertIsNone(parent.parent())
         self.assertEqual(child.parent(), parent)
-        parent.delete()  # TODO need to decide what the defined behavior is here
-        self.assertIsNone(parent.parent())
+        parent.delete()
+        child.refresh_from_db()
         self.assertIsNone(child.parent())
 
     def test_create_cycle(self):
@@ -246,6 +246,40 @@ class HierarchicalModelAdvancedTests(TestCase):
 
     def test_delete(self):
         self.n3.delete()
+        for node in (
+            self.n1,
+            self.n2,
+            self.n4,
+            self.n5,
+            self.n6,
+            self.n7,
+            self.n8,
+            self.n9,
+            self.n10,
+            self.n11,
+            self.n12,
+            self.n13,
+            self.n14,
+            self.n15,
+            self.n16,
+            self.n17,
+            self.n18,
+            self.n19,
+            self.n20,
+            self.n21,
+            self.n22,
+            self.n23,
+            self.n24,
+            self.n25,
+            self.n26,
+            self.n27,
+            self.n28,
+            self.n29,
+            self.n30,
+            self.n31,
+            self.n32,
+        ):
+            node.refresh_from_db()
         for node, parent in (
             (self.n1, None),
             (self.n2, self.n1),
@@ -282,6 +316,39 @@ class HierarchicalModelAdvancedTests(TestCase):
             self.assertEqual(node.parent(), parent)
 
         self.n13.delete()
+        for node in (
+            self.n1,
+            self.n2,
+            self.n4,
+            self.n5,
+            self.n6,
+            self.n7,
+            self.n8,
+            self.n9,
+            self.n10,
+            self.n11,
+            self.n12,
+            self.n14,
+            self.n15,
+            self.n16,
+            self.n17,
+            self.n18,
+            self.n19,
+            self.n20,
+            self.n21,
+            self.n22,
+            self.n23,
+            self.n24,
+            self.n25,
+            self.n26,
+            self.n27,
+            self.n28,
+            self.n29,
+            self.n30,
+            self.n31,
+            self.n32,
+        ):
+            node.refresh_from_db()
         for node, parent in (
             (self.n1, None),
             (self.n2, self.n1),
@@ -317,6 +384,38 @@ class HierarchicalModelAdvancedTests(TestCase):
             self.assertEqual(node.parent(), parent)
 
         self.n20.delete()
+        for node in (
+            self.n1,
+            self.n2,
+            self.n4,
+            self.n5,
+            self.n6,
+            self.n7,
+            self.n8,
+            self.n9,
+            self.n10,
+            self.n11,
+            self.n12,
+            self.n14,
+            self.n15,
+            self.n16,
+            self.n17,
+            self.n18,
+            self.n19,
+            self.n21,
+            self.n22,
+            self.n23,
+            self.n24,
+            self.n25,
+            self.n26,
+            self.n27,
+            self.n28,
+            self.n29,
+            self.n30,
+            self.n31,
+            self.n32,
+        ):
+            node.refresh_from_db()
         for node, parent in (
             (self.n1, None),
             (self.n2, self.n1),
@@ -351,6 +450,37 @@ class HierarchicalModelAdvancedTests(TestCase):
             self.assertEqual(node.parent(), parent)
 
         self.n6.delete()
+        for node in (
+            self.n1,
+            self.n2,
+            self.n4,
+            self.n5,
+            self.n7,
+            self.n8,
+            self.n9,
+            self.n10,
+            self.n11,
+            self.n12,
+            self.n14,
+            self.n15,
+            self.n16,
+            self.n17,
+            self.n18,
+            self.n19,
+            self.n21,
+            self.n22,
+            self.n23,
+            self.n24,
+            self.n25,
+            self.n26,
+            self.n27,
+            self.n28,
+            self.n29,
+            self.n30,
+            self.n31,
+            self.n32,
+        ):
+            node.refresh_from_db()
         for node, parent in (
             (self.n1, None),
             (self.n2, self.n1),
@@ -520,42 +650,39 @@ class HierarchicalModelAdvancedTests(TestCase):
         ):
             self.assertFalse(child.is_child_of(parent))
 
-
-class HierarchicalModelTestOld:
-
     def test_advanced_children(self):
-        mn1 = Node[self.model_class](self.n1)
-        mn2 = Node[self.model_class](self.n2)
-        mn3 = Node[self.model_class](self.n3)
-        mn4 = Node[self.model_class](self.n4)
-        mn5 = Node[self.model_class](self.n5)
-        mn6 = Node[self.model_class](self.n6)
-        mn7 = Node[self.model_class](self.n7)
-        mn8 = Node[self.model_class](self.n8)
-        mn9 = Node[self.model_class](self.n9)
-        mn10 = Node[self.model_class](self.n10)
-        mn11 = Node[self.model_class](self.n11)
-        mn12 = Node[self.model_class](self.n12)
-        mn13 = Node[self.model_class](self.n13)
-        mn14 = Node[self.model_class](self.n14)
-        mn15 = Node[self.model_class](self.n15)
-        mn16 = Node[self.model_class](self.n16)
-        mn17 = Node[self.model_class](self.n17)
-        mn18 = Node[self.model_class](self.n18)
-        mn19 = Node[self.model_class](self.n19)
-        mn20 = Node[self.model_class](self.n20)
-        mn21 = Node[self.model_class](self.n21)
-        mn22 = Node[self.model_class](self.n22)
-        mn23 = Node[self.model_class](self.n23)
-        mn24 = Node[self.model_class](self.n24)
-        mn25 = Node[self.model_class](self.n25)
-        mn26 = Node[self.model_class](self.n26)
-        mn27 = Node[self.model_class](self.n27)
-        mn28 = Node[self.model_class](self.n28)
-        mn29 = Node[self.model_class](self.n29)
-        mn30 = Node[self.model_class](self.n30)
-        mn31 = Node[self.model_class](self.n31)
-        mn32 = Node[self.model_class](self.n32)
+        mn1 = Node[ExampleModel](self.n1)
+        mn2 = Node[ExampleModel](self.n2)
+        mn3 = Node[ExampleModel](self.n3)
+        mn4 = Node[ExampleModel](self.n4)
+        mn5 = Node[ExampleModel](self.n5)
+        mn6 = Node[ExampleModel](self.n6)
+        mn7 = Node[ExampleModel](self.n7)
+        mn8 = Node[ExampleModel](self.n8)
+        mn9 = Node[ExampleModel](self.n9)
+        mn10 = Node[ExampleModel](self.n10)
+        mn11 = Node[ExampleModel](self.n11)
+        mn12 = Node[ExampleModel](self.n12)
+        mn13 = Node[ExampleModel](self.n13)
+        mn14 = Node[ExampleModel](self.n14)
+        mn15 = Node[ExampleModel](self.n15)
+        mn16 = Node[ExampleModel](self.n16)
+        mn17 = Node[ExampleModel](self.n17)
+        mn18 = Node[ExampleModel](self.n18)
+        mn19 = Node[ExampleModel](self.n19)
+        mn20 = Node[ExampleModel](self.n20)
+        mn21 = Node[ExampleModel](self.n21)
+        mn22 = Node[ExampleModel](self.n22)
+        mn23 = Node[ExampleModel](self.n23)
+        mn24 = Node[ExampleModel](self.n24)
+        mn25 = Node[ExampleModel](self.n25)
+        mn26 = Node[ExampleModel](self.n26)
+        mn27 = Node[ExampleModel](self.n27)
+        mn28 = Node[ExampleModel](self.n28)
+        mn29 = Node[ExampleModel](self.n29)
+        mn30 = Node[ExampleModel](self.n30)
+        mn31 = Node[ExampleModel](self.n31)
+        mn32 = Node[ExampleModel](self.n32)
 
         mn1.children = [mn2, mn3, mn4]
         mn2.children = [mn5, mn6, mn7]
@@ -670,36 +797,36 @@ class HierarchicalModelTestOld:
         )
 
     def test_advanced_children_options(self):
-        mn1 = Node[self.model_class](self.n1)
-        mn2 = Node[self.model_class](self.n2)
-        mn3 = Node[self.model_class](self.n3)
-        mn4 = Node[self.model_class](self.n4)
-        mn5 = Node[self.model_class](self.n5)
-        mn6 = Node[self.model_class](self.n6)
-        mn7 = Node[self.model_class](self.n7)
-        mn8 = Node[self.model_class](self.n8)
-        mn9 = Node[self.model_class](self.n9)
-        mn10 = Node[self.model_class](self.n10)
-        mn11 = Node[self.model_class](self.n11)
-        mn12 = Node[self.model_class](self.n12)
-        mn13 = Node[self.model_class](self.n13)
-        mn14 = Node[self.model_class](self.n14)
-        mn15 = Node[self.model_class](self.n15)
-        mn16 = Node[self.model_class](self.n16)
-        mn17 = Node[self.model_class](self.n17)
-        mn20 = Node[self.model_class](self.n20)
-        mn21 = Node[self.model_class](self.n21)
-        mn22 = Node[self.model_class](self.n22)
-        mn23 = Node[self.model_class](self.n23)
-        mn24 = Node[self.model_class](self.n24)
-        mn25 = Node[self.model_class](self.n25)
-        mn26 = Node[self.model_class](self.n26)
-        mn27 = Node[self.model_class](self.n27)
-        mn28 = Node[self.model_class](self.n28)
-        mn29 = Node[self.model_class](self.n29)
-        mn30 = Node[self.model_class](self.n30)
-        mn31 = Node[self.model_class](self.n31)
-        mn32 = Node[self.model_class](self.n32)
+        mn1 = Node[ExampleModel](self.n1)
+        mn2 = Node[ExampleModel](self.n2)
+        mn3 = Node[ExampleModel](self.n3)
+        mn4 = Node[ExampleModel](self.n4)
+        mn5 = Node[ExampleModel](self.n5)
+        mn6 = Node[ExampleModel](self.n6)
+        mn7 = Node[ExampleModel](self.n7)
+        mn8 = Node[ExampleModel](self.n8)
+        mn9 = Node[ExampleModel](self.n9)
+        mn10 = Node[ExampleModel](self.n10)
+        mn11 = Node[ExampleModel](self.n11)
+        mn12 = Node[ExampleModel](self.n12)
+        mn13 = Node[ExampleModel](self.n13)
+        mn14 = Node[ExampleModel](self.n14)
+        mn15 = Node[ExampleModel](self.n15)
+        mn16 = Node[ExampleModel](self.n16)
+        mn17 = Node[ExampleModel](self.n17)
+        mn20 = Node[ExampleModel](self.n20)
+        mn21 = Node[ExampleModel](self.n21)
+        mn22 = Node[ExampleModel](self.n22)
+        mn23 = Node[ExampleModel](self.n23)
+        mn24 = Node[ExampleModel](self.n24)
+        mn25 = Node[ExampleModel](self.n25)
+        mn26 = Node[ExampleModel](self.n26)
+        mn27 = Node[ExampleModel](self.n27)
+        mn28 = Node[ExampleModel](self.n28)
+        mn29 = Node[ExampleModel](self.n29)
+        mn30 = Node[ExampleModel](self.n30)
+        mn31 = Node[ExampleModel](self.n31)
+        mn32 = Node[ExampleModel](self.n32)
 
         mn1.children = [mn2, mn3, mn4]
         mn2.children = [mn5, mn6, mn7]

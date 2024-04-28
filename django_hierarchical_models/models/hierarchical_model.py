@@ -1,3 +1,5 @@
+from collections import deque
+from collections.abc import Callable
 from typing import TypeVar
 
 from django.db import models
@@ -53,7 +55,7 @@ class HierarchicalModel(models.Model):
     def ancestors(
         self: T,
         max_level: int | None = None,
-    ) -> list[T]:  # TODO more generic type hint? also this can be cleaned up
+    ) -> list[T]:
         if max_level is None:
             max_level = -1
         ancestors = []
@@ -72,5 +74,27 @@ class HierarchicalModel(models.Model):
             object_manager = self.__class__._default_manager
         return object_manager.filter(_parent=self)
 
-    def children(self: T) -> Node[T]:
-        raise NotImplementedError()
+    def children(
+        self: T,
+        max_generations: int | None = None,
+        max_siblings: int | None = None,
+        max_total: int | None = None,
+        sibling_transform: Callable[[QuerySet[T]], QuerySet[T]] | None = None,
+    ) -> Node[T]:
+        if max_total is None:
+            max_total = -1
+        root = Node[T](self)
+        queue = deque([(Node[T](None), root, 0)])
+        while queue and max_total != 0:
+            parent, node, generation = queue.popleft()
+            parent.children.append(node)
+            max_total -= 1
+            if max_generations is None or generation < max_generations:
+                children = node.instance.direct_children()
+                if sibling_transform is not None:
+                    children = sibling_transform(children)
+                if max_siblings is not None:
+                    children = children[:max_siblings]
+                for child in children:
+                    queue.append((node, Node[T](child), generation + 1))
+        return root

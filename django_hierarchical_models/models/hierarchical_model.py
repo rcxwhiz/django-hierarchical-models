@@ -3,7 +3,8 @@ from collections.abc import Callable
 from typing import TypeVar
 
 from django.db import models
-from django.db.models import Manager, QuerySet
+from django.db.models import QuerySet
+from django.db.models.manager import BaseManager
 
 from django_hierarchical_models.models.exceptions import CycleException
 from django_hierarchical_models.models.node import Node
@@ -26,7 +27,7 @@ class HierarchicalModel(models.Model):
         abstract = True
 
     def parent(self: T) -> T | None:
-        return self._parent
+        return self._parent  # type: ignore
 
     def set_parent(self: T, parent: T | None, unchecked: bool = False):
         if (
@@ -49,7 +50,7 @@ class HierarchicalModel(models.Model):
     def root(self: T) -> T:
         root = self
         while root._parent is not None:
-            root = root._parent
+            root = root._parent  # type: ignore
         return root
 
     def ancestors(
@@ -59,16 +60,17 @@ class HierarchicalModel(models.Model):
         if max_level is None:
             max_level = -1
         ancestors = []
-        ancestor = self._parent
+        ancestor: T | None
+        ancestor = self._parent  # type: ignore
         while ancestor is not None and max_level != 0:
             ancestors.append(ancestor)
-            ancestor = ancestor._parent
+            ancestor = ancestor._parent  # type: ignore
             max_level -= 1
         return ancestors
 
     def direct_children(
         self: T,
-        object_manager: Manager[T] | None = None,
+        object_manager: BaseManager[T] | None = None,
     ) -> QuerySet[T]:
         if object_manager is None:
             object_manager = self.__class__._default_manager
@@ -84,7 +86,8 @@ class HierarchicalModel(models.Model):
         if max_total is None:
             max_total = -1
         root = Node[T](self)
-        queue = deque([(Node[T](None), root, 0)])
+        queue: deque[tuple[Node[T], Node[T], int]]
+        queue = deque([(Node[T](None), root, 0)])  # type: ignore
         while queue and max_total != 0:
             parent, node, generation = queue.popleft()
             parent.children.append(node)

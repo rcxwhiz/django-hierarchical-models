@@ -97,6 +97,39 @@ class HierarchicalModelSimpleTests(TestCase):
         self.assertFalse(n1.is_child_of(n2))
         self.assertTrue(n2.is_child_of(n1))
 
+    def test_delete_refresh_behavior(self):
+        n1 = create(1)
+        n2 = create(2, parent=n1)
+        self.assertEqual(n2.parent(), n1)
+
+        n1.delete()
+
+        self.assertEqual(n2.parent(), n1)
+
+        n2.refresh_from_db()
+
+        self.assertIsNone(n2.parent())
+
+    def test_root_refresh_behavior(self):
+        n1 = create(1)
+        n2 = create(2, parent=n1)
+        n3 = create(3, parent=n2)
+        n3_copy = ExampleModel.objects.get(pk=n3.pk)
+
+        self.assertEqual(n2.parent(), n1)
+        self.assertEqual(n3.root(), n1)
+        self.assertEqual(n3_copy.root(), n1)
+
+        n2.set_parent(None)
+
+        self.assertIsNone(n2.parent())
+
+        self.assertEqual(n3.root(), n2)
+
+        self.assertEqual(n3_copy.root(), n1)
+        n3_copy.refresh_from_db()
+        self.assertEqual(n3_copy.root(), n2)
+
 
 class HierarchicalModelAdvancedTests(TestCase):
     def setUp(self):

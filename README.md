@@ -6,50 +6,103 @@
 [![Supported Python versions](https://img.shields.io/pypi/pyversions/django-hierarchical-models.svg)](https://pypi.python.org/pypi/django-hierarchical-models/)
 [![Supported Django versions](https://img.shields.io/pypi/djversions/django-hierarchical-models.svg)](https://pypi.python.org/pypi/django-hierarchical-models/)
 
-This package provides several implementations Django models which support hierarchical
-data. Efficiently modeling hierarchical, or tree like data, in a relational database
-can be non-trivial. The following models implement the same interface, but there have
-different tradeoffs.
+This package provides an abstract Django model which supports hierarchical data. The
+implementation is an adjacency list, which is rather naive, but actually has higher
+performance in this scenario than other implementations such as path enumeration or
+nested sets because those implementations store more data with each instance which must
+be updated before almost every operation, effectively doubling (or more) database
+queries and killing performance. The performance of this implementation actually holds
+up pretty well at large numbers of instances.
 
-`models.HierarchicalModelInterface`
+## Usage
 
-This abstract model defines the shared functionality of all hierarchical models. Some
-models may implement additional methods which are cheap for their implementation.
+```python
+from django.db import models
+from django_hierarchical_models.models import HierarchicalModel
 
-`models.AdjacencyListModel`
+class MyModel(HierarchicalModel):
+    name = models.CharField(max_length=100)
 
-This is the most trivial implementation, using a single `_parent` foreign key field.
-Edits are efficient in this model, but queries for children/parents can be very
-expensive.
+...
 
-`models.PathEnumerationModel`
+child = MyModel.objects.create(name="Betty")
+child.parent()  # None
 
-This model uses a `_ancestors` json field to store the path to its root. This model
-has middle ground efficiency for edits and queries. **NOTE:** This model requires
-database features that are not available in Oracle or SQLite backends. An exception
-will be raised if you attempt to use this model with an unsupported backend.
+parent = MyModel.objects.create(name="Simon")
+child.set_parent(parent)
+child.parent()  # <MyModel: "Simon">
 
-`models.NestedSetModel`
+child.root()  # <MyModel: "Simon">
+parent.root()  # <MyModel: "Simon">
 
-This model uses `_left` and `_right` integer fields to determine which instances it is
-parent/child to. Queries can be very efficient in this model, but edits can be very
-expensive, possibly even requiring updates to `_left` and `_right` fields of ever model
-instance for a single edit.
+parent.direct_children()  # [<MyModel: "Betty">]
 
-`models.Node`
+child.is_child_of(parent)  # True
+parent.is_child_of(child)  # False
+```
 
-Calls to `HierarchicalModel.children()` return this type, which has `instance` and
-`children` members, with the children being additional instances of `Node`.
+## Refreshing from database
 
-#### Benchmarks
+External changes to an instance's parent are not automatically reflected in the
+instance. This leads to the following behavior:
 
-These benchmarks are to illustrate the relative performance of the different models. As
-of now they are kind of whacked out. These tests were run with Postgres.
+```python
+instance_1 = MyModel.objects.create(name="Betty")
+instance_2 = MyModel.objects.create(parent=instance_1, name="Simon")
+insstance_2.parent()  # <MyModel: "Betty">
 
-| Model            | Query Ancestors | Query Parent | Query Children | Query Direct Children | Create | Create Child | Delete | Delete Parent | Add Child | Remove Child | Set Parent | Set Parent Unchecked* |
-|------------------|-----------------|--------------|----------------|-----------------------|--------|--------------|--------|---------------|-----------|--------------|------------|-----------------------|
-| Adjacency List   | 9.56            | 2.76         | 5.17           | 0.96                  | 0.98   | 0.33         | 0.72   | 0.95          | 0.69      | 1.64         | 133.60     | 0.93                  |
-| Path Enumeration | 9.17            | 2.67         | 29.71          | 0.84                  | 0.99   | 0.32         | 0.75   | 1.26          | 0.94      | 1.79         | 2.98       |                       |
-| Nested Set       | 169.86          | 118.97       | 211.75         | 107.30                | 3.31   | 59.19        | 113.79 | 175.11        | 71.13     | 293.61       | 572.47     |                       |
+instance_1.delete()
 
-\* function only available on Adjacency List Model
+instance_2.parent()  # <MyModel: "Betty">
+
+instance_2.refresh_from_db()
+
+instance_2.parent()  # None
+```
+
+```python
+instance_1 = MyModel.objects.create(name="Betty")
+instance_2 = MyModel.objects.create(parent=instance_1, name="Simon")
+instance_3 = MyModel.objects.create(parent=instance_2, name="Finn")
+instance_3_copy = MyModel.objects.get(pk=instance_3.pk)
+
+instance_1.root()  # <MyModel: "Betty">
+instance_2.root()  # <MyModel: "Betty">
+instance_3.root()  # <MyModel: "Betty">
+instance_3_copy.root()  # <MyModel: "Betty">
+
+instance_2.set_parent(None)
+
+instance_1.root()  # <MyModel: "Betty">
+instance_2.root()  # <MyModel: "Simon">
+instance_3.root()  # <MyModel: "Simon">
+instance_3_copy.root()  # <MyModel: "Betty">
+
+instance_3_copy.refresh_from_db()
+
+instance_1.root()  # <MyModel: "Betty">
+instance_2.root()  # <MyModel: "Simon">
+instance_3.root()  # <MyModel: "Simon">
+instance_3_copy.root()  # <MyModel: "Simon">
+```
+
+Moral of the story, if your instance's parent might have been edited/deleted,
+you will want to refresh your instance for that change to be reflected.  
+
+## Benchmarks
+
+The following benchmarks demonstrate that the query performance of the model stays the
+same from 10,000 to 1,000,000 models. These tests were done with Postgres. The results
+are in the form `total time (s) / per instance (ms)`. Eventually the query performance
+of this model should scale down with the total number of instances in the database,
+but it appears up to these scales those effects are insignificant compared to other
+overhead.
+
+| n         | Chance Child | Query Parent  | Query Root    | Is Child Of   | Query Ancestors | Query Direct Children | Query Children |
+|-----------|--------------|---------------|---------------|---------------|-----------------|-----------------------|----------------|
+| 10,000    | 50%          | 0.29 / 0.029  | 0.27 / 0.027  | 0.27 / 0.027  | 0.29 / 0.029    | 0.78 / 0.078          | 3.85 / 0.385   |
+| 10,000    | 90%          | 0.30 / 0.030  | 0.39 / 0.039  | 0.31 / 0.031  | 0.30 / 0.030    | 0.87 / 0.087          | 5.07 / 0.507   |
+| 100,000   | 50%          | 3.46 / 0.035  | 3.12 / 0.031  | 3.55 / 0.036  | 3.09 / 0.031    | 8.24 / 0.082          | 37.89 / 0.380  |
+| 100,000   | 90%          | 4.10 / 0.041  | 3.48 / 0.035  | 3.88 / 0.039  | 3.55 / 0.036    | 8.89 / 0.089          | 48.30 / 0.483  |
+| 1,000,000 | 50%          | 32.39 / 0.032 | 34.53 / 0.035 | 35.41 / 0.035 | 32.16 / 0.032   | 86.05 / 0.086         | 385.62 / 0.386 |
+| 1,000,000 | 90%          | 34.87 / 0.035 | 38.59 / 0.039 | 38.93 / 0.039 | 36.51 / 0.037   | 87.49 / 0.087         | 490.65 / 0.491 |

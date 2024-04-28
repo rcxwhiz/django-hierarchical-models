@@ -48,5 +48,30 @@ class QueryBenchmark(TestCase):
 
 
 class ATest(QueryBenchmark):
+    n = 10000
+    density = 2
+
+
+class BTest(QueryBenchmark):
+    n = 10000
+    density = 10
+
+
+class CTest(QueryBenchmark):
+    n = 100000
+    density = 2
+
+
+class DTest(QueryBenchmark):
+    n = 100000
+    density = 10
+
+
+class ETest(QueryBenchmark):
+    n = 1000000
+    density = 2
+
+
+class FTest(QueryBenchmark):
     n = 1000000
     density = 10

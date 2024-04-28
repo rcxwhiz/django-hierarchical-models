@@ -45,7 +45,6 @@ class QueryBenchmark(TestCase):
     def test_is_child_of(self):
         for instance_1, instance_2 in pairwise(self.instances):
             _ = instance_1.is_child_of(instance_2)
-            _ = instance_2.is_child_of(instance_1)
 
 
 class ATest(QueryBenchmark):

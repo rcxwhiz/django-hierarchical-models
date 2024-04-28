@@ -1,41 +1,33 @@
 from __future__ import annotations
 
 import copy
+from dataclasses import dataclass, field
 from typing import Generic, TypeVar
 
 T = TypeVar("T")
 
 
+@dataclass
 class Node(Generic[T]):
-    def __init__(
-        self,
-        instance: T,
-        children: list[Node[T]] | None = None,
-    ):
-        self.instance = instance
-        self.children = children if children is not None else []
+    """Structured representation of an instance's children.
 
-    def __eq__(self, other):
-        if not isinstance(other, Node):
-            return False
-        if self.instance != other.instance:
-            return False
-        if len(self.children) != len(other.children):
-            return False
-        return all(
-            self_child == other_child
-            for self_child, other_child in zip(self.children, other.children)
-        )
+    Attributes:
+        instance: The HierarchicalModel instance for this node.
+        children: An ordered list of Nodes for the children of this instance.
+    """
+
+    instance: T
+    children: list[Node[T]] = field(default_factory=list)
 
     def __copy__(self):
         return Node(self.instance, [copy.copy(child) for child in self.children])
 
-    def _p(self, s, indent=0, dash=False):
+    def _child_printer(self, s, indent=0, dash=False):
         s[0] += f"\n{' ' * indent}{'- ' if dash else ''}{self.instance}"
         for child in self.children:
-            child._p(s, indent + 2, True)
+            child._child_printer(s, indent + 2, True)
 
     def __str__(self):
         s = [""]
-        self._p(s)
+        self._child_printer(s)
         return s[0]

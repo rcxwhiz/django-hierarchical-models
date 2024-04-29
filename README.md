@@ -26,11 +26,14 @@ class MyModel(HierarchicalModel):
 ...
 
 child = MyModel.objects.create(name="Betty")
-child.parent()  # None
+child.parent  # None
 
 parent = MyModel.objects.create(name="Simon")
+# checks for pesky cycles
 child.set_parent(parent)
-child.parent()  # <MyModel: "Simon">
+# alternative
+# child.parent = parent
+child.parent  # <MyModel: "Simon">
 
 child.root()  # <MyModel: "Simon">
 parent.root()  # <MyModel: "Simon">
@@ -41,23 +44,31 @@ child.is_child_of(parent)  # True
 parent.is_child_of(child)  # False
 ```
 
+## parent = vs .set_parent()
+
+`parent` is a `ForeignKeyField` which may be directly accessed or set. The
+`.set_parent()` method checks to see if the operation would create a cycle, which can
+be bad for some of the other instance methods. The `.set_parent()` method is slower
+because it must determine if a cycle would be formed. `.set_parent()` makes a call to
+`.save(update_fields=("parent",))`, so it is not necessary to call `.save()` after
+updating the parent this way.
+
 ## Refreshing from database
 
-External changes to an instance's parent are not automatically reflected in the
-instance. This leads to the following behavior:
+The following is expected behavior:
 
 ```python
 instance_1 = MyModel.objects.create(name="Betty")
 instance_2 = MyModel.objects.create(parent=instance_1, name="Simon")
-insstance_2.parent()  # <MyModel: "Betty">
+instance_2.parent  # <MyModel: "Betty">
 
 instance_1.delete()
 
-instance_2.parent()  # <MyModel: "Betty">
+instance_2.parent  # <MyModel: "Betty">
 
 instance_2.refresh_from_db()
 
-instance_2.parent()  # None
+instance_2.parent  # None
 ```
 
 ```python
@@ -86,8 +97,8 @@ instance_3.root()  # <MyModel: "Simon">
 instance_3_copy.root()  # <MyModel: "Simon">
 ```
 
-Moral of the story, if your instance's parent might have been edited/deleted,
-you will want to refresh your instance for that change to be reflected.  
+Moral of the story, if your instance's parent might have been edited/deleted, you will
+want to refresh your instance for that change to be reflected.  
 
 ## Benchmarks
 

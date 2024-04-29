@@ -15,21 +15,21 @@ class HierarchicalModelSimpleTests(TestCase):
     def test_parent(self):
         parent = create(1)
         child = create(2, parent=parent)
-        self.assertIsNone(parent.parent())
-        self.assertEqual(child.parent(), parent)
+        self.assertIsNone(parent.parent)
+        self.assertEqual(child.parent, parent)
 
     def test_set_parent(self):
         parent = create(1)
         child = create(2)
-        self.assertIsNone(parent.parent())
-        self.assertIsNone(child.parent())
+        self.assertIsNone(parent.parent)
+        self.assertIsNone(child.parent)
         child.num = 3
         child.set_parent(parent)
-        self.assertIsNone(parent.parent())
-        self.assertEqual(child.parent(), parent)
+        self.assertIsNone(parent.parent)
+        self.assertEqual(child.parent, parent)
         self.assertEqual(child.num, 3)
         child.refresh_from_db()
-        self.assertEqual(child.parent(), parent)
+        self.assertEqual(child.parent, parent)
         self.assertEqual(child.num, 2)
 
     def test_direct_children(self):
@@ -41,13 +41,12 @@ class HierarchicalModelSimpleTests(TestCase):
 
     def test_delete(self):
         parent = create(1)
-        child = create(2)
-        child.set_parent(parent)
-        self.assertIsNone(parent.parent())
-        self.assertEqual(child.parent(), parent)
+        child = create(2, parent=parent)
+        self.assertIsNone(parent.parent)
+        self.assertEqual(child.parent, parent)
         parent.delete()
         child.refresh_from_db()
-        self.assertIsNone(child.parent())
+        self.assertIsNone(child.parent)
 
     def test_create_cycle(self):
         parent = create(1)
@@ -56,6 +55,9 @@ class HierarchicalModelSimpleTests(TestCase):
             parent.set_parent(child)
         self.assertEqual(cm.exception.child, parent)
         self.assertEqual(cm.exception.parent, child)
+        self.assertEqual(
+            str(cm.exception), "Making 1 a child of 2 would create a cycle"
+        )
 
     def test_ancestors(self):
         parent = create(1)
@@ -100,15 +102,15 @@ class HierarchicalModelSimpleTests(TestCase):
     def test_delete_refresh_behavior(self):
         n1 = create(1)
         n2 = create(2, parent=n1)
-        self.assertEqual(n2.parent(), n1)
+        self.assertEqual(n2.parent, n1)
 
         n1.delete()
 
-        self.assertEqual(n2.parent(), n1)
+        self.assertEqual(n2.parent, n1)
 
         n2.refresh_from_db()
 
-        self.assertIsNone(n2.parent())
+        self.assertIsNone(n2.parent)
 
     def test_root_refresh_behavior(self):
         n1 = create(1)
@@ -116,13 +118,13 @@ class HierarchicalModelSimpleTests(TestCase):
         n3 = create(3, parent=n2)
         n3_copy = ExampleModel.objects.get(pk=n3.pk)
 
-        self.assertEqual(n2.parent(), n1)
+        self.assertEqual(n2.parent, n1)
         self.assertEqual(n3.root(), n1)
         self.assertEqual(n3_copy.root(), n1)
 
         n2.set_parent(None)
 
-        self.assertIsNone(n2.parent())
+        self.assertIsNone(n2.parent)
 
         self.assertEqual(n3.root(), n2)
 
@@ -201,29 +203,29 @@ class HierarchicalModelAdvancedTests(TestCase):
             (self.n31, self.n23),
             (self.n32, self.n23),
         ):
-            self.assertEqual(node.parent(), parent)
+            self.assertEqual(node.parent, parent)
 
     def test_set_parent(self):
         self.n2.set_parent(None)
-        self.assertIsNone(self.n2.parent())
-        self.assertEqual(self.n5.parent(), self.n2)
-        self.assertEqual(self.n6.parent(), self.n2)
-        self.assertEqual(self.n7.parent(), self.n2)
+        self.assertIsNone(self.n2.parent)
+        self.assertEqual(self.n5.parent, self.n2)
+        self.assertEqual(self.n6.parent, self.n2)
+        self.assertEqual(self.n7.parent, self.n2)
 
         self.n11.set_parent(self.n13)
-        self.assertEqual(self.n11.parent(), self.n13)
-        self.assertEqual(self.n13.parent(), self.n12)
-        self.assertEqual(self.n14.parent(), self.n13)
+        self.assertEqual(self.n11.parent, self.n13)
+        self.assertEqual(self.n13.parent, self.n12)
+        self.assertEqual(self.n14.parent, self.n13)
 
         self.n20.set_parent(self.n18)
-        self.assertEqual(self.n20.parent(), self.n18)
-        self.assertIsNone(self.n18.parent())
-        self.assertEqual(self.n21.parent(), self.n20)
-        self.assertEqual(self.n22.parent(), self.n20)
-        self.assertEqual(self.n23.parent(), self.n20)
-        self.assertEqual(self.n24.parent(), self.n20)
-        self.assertEqual(self.n25.parent(), self.n20)
-        self.assertEqual(self.n26.parent(), self.n20)
+        self.assertEqual(self.n20.parent, self.n18)
+        self.assertIsNone(self.n18.parent)
+        self.assertEqual(self.n21.parent, self.n20)
+        self.assertEqual(self.n22.parent, self.n20)
+        self.assertEqual(self.n23.parent, self.n20)
+        self.assertEqual(self.n24.parent, self.n20)
+        self.assertEqual(self.n25.parent, self.n20)
+        self.assertEqual(self.n26.parent, self.n20)
 
     def test_direct_children(self):
         for node in (
@@ -346,7 +348,7 @@ class HierarchicalModelAdvancedTests(TestCase):
             (self.n31, self.n23),
             (self.n32, self.n23),
         ):
-            self.assertEqual(node.parent(), parent)
+            self.assertEqual(node.parent, parent)
 
         self.n13.delete()
         for node in (
@@ -414,7 +416,7 @@ class HierarchicalModelAdvancedTests(TestCase):
             (self.n31, self.n23),
             (self.n32, self.n23),
         ):
-            self.assertEqual(node.parent(), parent)
+            self.assertEqual(node.parent, parent)
 
         self.n20.delete()
         for node in (
@@ -480,7 +482,7 @@ class HierarchicalModelAdvancedTests(TestCase):
             (self.n31, self.n23),
             (self.n32, self.n23),
         ):
-            self.assertEqual(node.parent(), parent)
+            self.assertEqual(node.parent, parent)
 
         self.n6.delete()
         for node in (
@@ -544,7 +546,7 @@ class HierarchicalModelAdvancedTests(TestCase):
             (self.n31, self.n23),
             (self.n32, self.n23),
         ):
-            self.assertEqual(node.parent(), parent)
+            self.assertEqual(node.parent, parent)
 
     def test_create_cycle(self):
         with self.assertRaises(CycleException) as cm:
@@ -731,6 +733,8 @@ class HierarchicalModelAdvancedTests(TestCase):
 
         mn20.children = [mn21, mn22, mn23, mn24, mn25, mn26]
         mn23.children = [mn27, mn28, mn29, mn30, mn31, mn32]
+
+        self.assertEqual(str(mn2), "\n2\n  - 5\n  - 6\n    - 9\n  - 7")
 
         self.assertEqual(
             self.n1.children(sibling_transform=lambda x: x.order_by("num")), mn1

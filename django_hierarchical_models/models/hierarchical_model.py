@@ -13,54 +13,32 @@ T = TypeVar("T", bound="HierarchicalModel")
 
 
 class HierarchicalModel(models.Model):
-    """An abstract Django model supporting hierarchical data."""
+    """An abstract Django model supporting hierarchical data.
 
-    _parent = models.ForeignKey(
-        "self", on_delete=models.SET_NULL, blank=True, null=True
-    )
+    Attributes:
+        parent: ForeignKey to self.
+    """
 
-    def __init__(self, *args, **kwargs):
-        """Initialize with an optional "parent" kwarg.
-
-        Keyword Args:
-            parent: Parent model of this instance.
-        """
-        if len(args) == 0 and "parent" in kwargs:
-            kwargs["_parent"] = kwargs.pop("parent")
-        super().__init__(*args, **kwargs)
+    parent = models.ForeignKey("self", on_delete=models.SET_NULL, blank=True, null=True)
 
     class Meta:
         abstract = True
 
-    def parent(self: T) -> T | None:
-        """The parent of this instance.
-
-        Returns:
-            The instance of the parent, or None if this instance has no parent.
-        """
-        return self._parent  # type: ignore
-
-    def set_parent(self: T, parent: T | None, unchecked: bool = False):
-        """Set the parent of this instance.
+    def set_parent(self: T, parent: T | None):
+        """Set the parent of this instance and checks for cycles.
 
         Args:
             parent: The new parent of this instance, or None to make this
               instance an orphan.
-            unchecked: If true, there will be no check for cycles. Default
-              False.
 
         Raises:
             CycleException: This operation would create a cycle.
         """
 
-        if (
-            not unchecked
-            and parent is not None
-            and (parent == self or parent.is_child_of(self))
-        ):
+        if parent is not None and (parent == self or parent.is_child_of(self)):
             raise CycleException(parent, self)
-        self._parent = parent
-        self.save(update_fields=("_parent",))
+        self.parent = parent
+        self.save(update_fields=("parent",))
 
     def is_child_of(self: T, parent: T) -> bool:
         """Checks if this instance is a child of parent.
@@ -73,11 +51,11 @@ class HierarchicalModel(models.Model):
             false when checked against itself.
         """
 
-        ancestor = self._parent
+        ancestor = self.parent
         while ancestor is not None:
             if ancestor == parent:
                 return True
-            ancestor = ancestor._parent
+            ancestor = ancestor.parent
         return False
 
     def root(self: T) -> T:
@@ -88,8 +66,8 @@ class HierarchicalModel(models.Model):
         """
 
         root = self
-        while root._parent is not None:
-            root = root._parent  # type: ignore
+        while root.parent is not None:
+            root = root.parent  # type: ignore
         return root
 
     def ancestors(
@@ -110,10 +88,10 @@ class HierarchicalModel(models.Model):
             max_level = -1
         ancestors = []
         ancestor: T | None
-        ancestor = self._parent  # type: ignore
+        ancestor = self.parent  # type: ignore
         while ancestor is not None and max_level != 0:
             ancestors.append(ancestor)
-            ancestor = ancestor._parent  # type: ignore
+            ancestor = ancestor.parent  # type: ignore
             max_level -= 1
         return ancestors
 
@@ -134,7 +112,7 @@ class HierarchicalModel(models.Model):
 
         if object_manager is None:
             object_manager = self.__class__._default_manager
-        return object_manager.filter(_parent=self)
+        return object_manager.filter(parent=self)
 
     def children(
         self: T,

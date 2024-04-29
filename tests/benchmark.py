@@ -24,7 +24,7 @@ class QueryBenchmark(TestCase):
 
     def test_get_parent(self):
         for instance in self.instances:
-            _ = instance.parent()
+            _ = instance.parent
 
     def test_get_ancestors(self):
         for instance in self.instances:

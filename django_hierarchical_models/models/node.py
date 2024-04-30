@@ -17,13 +17,20 @@ class Node(Generic[T]):
     """
 
     instance: T
+    fully_explored: bool
     children: list[Node[T]] = field(default_factory=list)
 
     def __copy__(self):
-        return Node(self.instance, [copy.copy(child) for child in self.children])
+        return Node(
+            self.instance,
+            self.fully_explored,
+            [copy.copy(child) for child in self.children],
+        )
 
     def _child_printer(self, s, indent=0, dash=False):
-        s[0] += f"\n{' ' * indent}{'- ' if dash else ''}{self.instance}"
+        s[0] += f"\n{' ' * indent}{'- ' if dash else ''}"
+        s[0] += f"{self.instance}"
+        s[0] += f" ({'fully ' if self.fully_explored else 'un'}explored)"
         for child in self.children:
             child._child_printer(s, indent + 2, True)
 

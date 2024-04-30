@@ -144,9 +144,9 @@ class HierarchicalModel(models.Model):
 
         if max_total is None:
             max_total = -1
-        root = Node[T](self)
+        root = Node[T](self, True)
         queue: deque[tuple[Node[T], Node[T], int]]
-        queue = deque([(Node[T](None), root, 0)])  # type: ignore
+        queue = deque([(Node[T](None, True), root, 0)])  # type: ignore
         while queue and max_total != 0:
             parent, node, generation = queue.popleft()
             parent.children.append(node)
@@ -156,7 +156,13 @@ class HierarchicalModel(models.Model):
                 if sibling_transform is not None:
                     children = sibling_transform(children)
                 if max_siblings is not None:
-                    children = children[:max_siblings]
+                    children = children[
+                        :max_siblings
+                    ]  # TODO this needs to lead to an unexplored mark?
                 for child in children:
-                    queue.append((node, Node[T](child), generation + 1))
+                    queue.append((node, Node[T](child, True), generation + 1))
+            else:
+                node.fully_explored = False
+        for parent, _, _ in queue:
+            parent.fully_explored = False
         return root
